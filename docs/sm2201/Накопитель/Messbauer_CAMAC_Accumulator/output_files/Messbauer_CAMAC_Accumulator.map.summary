@@ -1,0 +1,14 @@
+Analysis & Synthesis Status : Successful - Sat Jan 21 17:21:16 2023
+Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+Revision Name : Messbauer_CAMAC_Accumulator
+Top-level Entity Name : Messbauer_CAMAC_Accumulator
+Family : Cyclone IV E
+Total logic elements : 12
+    Total combinational functions : 12
+    Dedicated logic registers : 3
+Total registers : 3
+Total pins : 73
+Total virtual pins : 0
+Total memory bits : 0
+Embedded Multiplier 9-bit elements : 0
+Total PLLs : 0

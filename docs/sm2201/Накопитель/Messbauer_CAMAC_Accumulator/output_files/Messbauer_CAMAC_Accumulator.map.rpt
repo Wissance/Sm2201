@@ -1,0 +1,414 @@
+Analysis & Synthesis report for Messbauer_CAMAC_Accumulator
+Sat Jan 21 17:21:16 2023
+Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+
+
+---------------------
+; Table of Contents ;
+---------------------
+  1. Legal Notice
+  2. Analysis & Synthesis Summary
+  3. Analysis & Synthesis Settings
+  4. Parallel Compilation
+  5. Analysis & Synthesis Source Files Read
+  6. Analysis & Synthesis Resource Usage Summary
+  7. Analysis & Synthesis Resource Utilization by Entity
+  8. State Machine - |Messbauer_CAMAC_Accumulator|State
+  9. Registers Removed During Synthesis
+ 10. General Register Statistics
+ 11. Multiplexer Restructuring Statistics (Restructuring Performed)
+ 12. Post-Synthesis Netlist Statistics for Top Partition
+ 13. Elapsed Time Per Partition
+ 14. Analysis & Synthesis Messages
+ 15. Analysis & Synthesis Suppressed Messages
+
+
+
+----------------
+; Legal Notice ;
+----------------
+Copyright (C) 2018  Intel Corporation. All rights reserved.
+Your use of Intel Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Intel Program License 
+Subscription Agreement, the Intel Quartus Prime License Agreement,
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details.
+
+
+
++--------------------------------------------------------------------------------------+
+; Analysis & Synthesis Summary                                                         ;
++------------------------------------+-------------------------------------------------+
+; Analysis & Synthesis Status        ; Successful - Sat Jan 21 17:21:16 2023           ;
+; Quartus Prime Version              ; 18.1.0 Build 625 09/12/2018 SJ Standard Edition ;
+; Revision Name                      ; Messbauer_CAMAC_Accumulator                     ;
+; Top-level Entity Name              ; Messbauer_CAMAC_Accumulator                     ;
+; Family                             ; Cyclone IV E                                    ;
+; Total logic elements               ; 12                                              ;
+;     Total combinational functions  ; 12                                              ;
+;     Dedicated logic registers      ; 3                                               ;
+; Total registers                    ; 3                                               ;
+; Total pins                         ; 73                                              ;
+; Total virtual pins                 ; 0                                               ;
+; Total memory bits                  ; 0                                               ;
+; Embedded Multiplier 9-bit elements ; 0                                               ;
+; Total PLLs                         ; 0                                               ;
++------------------------------------+-------------------------------------------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Settings                                                                                                ;
++------------------------------------------------------------------+-----------------------------+-----------------------------+
+; Option                                                           ; Setting                     ; Default Value               ;
++------------------------------------------------------------------+-----------------------------+-----------------------------+
+; Top-level entity name                                            ; Messbauer_CAMAC_Accumulator ; Messbauer_CAMAC_Accumulator ;
+; Family name                                                      ; Cyclone IV E                ; Cyclone V                   ;
+; Use smart compilation                                            ; Off                         ; Off                         ;
+; Enable parallel Assembler and Timing Analyzer during compilation ; On                          ; On                          ;
+; Enable compact report table                                      ; Off                         ; Off                         ;
+; Restructure Multiplexers                                         ; Auto                        ; Auto                        ;
+; Create Debugging Nodes for IP Cores                              ; Off                         ; Off                         ;
+; Preserve fewer node names                                        ; On                          ; On                          ;
+; Intel FPGA IP Evaluation Mode                                    ; Enable                      ; Enable                      ;
+; Verilog Version                                                  ; Verilog_2001                ; Verilog_2001                ;
+; VHDL Version                                                     ; VHDL_1993                   ; VHDL_1993                   ;
+; State Machine Processing                                         ; Auto                        ; Auto                        ;
+; Safe State Machine                                               ; Off                         ; Off                         ;
+; Extract Verilog State Machines                                   ; On                          ; On                          ;
+; Extract VHDL State Machines                                      ; On                          ; On                          ;
+; Ignore Verilog initial constructs                                ; Off                         ; Off                         ;
+; Iteration limit for constant Verilog loops                       ; 5000                        ; 5000                        ;
+; Iteration limit for non-constant Verilog loops                   ; 250                         ; 250                         ;
+; Add Pass-Through Logic to Inferred RAMs                          ; On                          ; On                          ;
+; Infer RAMs from Raw Logic                                        ; On                          ; On                          ;
+; Parallel Synthesis                                               ; On                          ; On                          ;
+; DSP Block Balancing                                              ; Auto                        ; Auto                        ;
+; NOT Gate Push-Back                                               ; On                          ; On                          ;
+; Power-Up Don't Care                                              ; On                          ; On                          ;
+; Remove Redundant Logic Cells                                     ; Off                         ; Off                         ;
+; Remove Duplicate Registers                                       ; On                          ; On                          ;
+; Ignore CARRY Buffers                                             ; Off                         ; Off                         ;
+; Ignore CASCADE Buffers                                           ; Off                         ; Off                         ;
+; Ignore GLOBAL Buffers                                            ; Off                         ; Off                         ;
+; Ignore ROW GLOBAL Buffers                                        ; Off                         ; Off                         ;
+; Ignore LCELL Buffers                                             ; Off                         ; Off                         ;
+; Ignore SOFT Buffers                                              ; On                          ; On                          ;
+; Limit AHDL Integers to 32 Bits                                   ; Off                         ; Off                         ;
+; Optimization Technique                                           ; Balanced                    ; Balanced                    ;
+; Carry Chain Length                                               ; 70                          ; 70                          ;
+; Auto Carry Chains                                                ; On                          ; On                          ;
+; Auto Open-Drain Pins                                             ; On                          ; On                          ;
+; Perform WYSIWYG Primitive Resynthesis                            ; Off                         ; Off                         ;
+; Auto ROM Replacement                                             ; On                          ; On                          ;
+; Auto RAM Replacement                                             ; On                          ; On                          ;
+; Auto DSP Block Replacement                                       ; On                          ; On                          ;
+; Auto Shift Register Replacement                                  ; Auto                        ; Auto                        ;
+; Allow Shift Register Merging across Hierarchies                  ; Auto                        ; Auto                        ;
+; Auto Clock Enable Replacement                                    ; On                          ; On                          ;
+; Strict RAM Replacement                                           ; Off                         ; Off                         ;
+; Allow Synchronous Control Signals                                ; On                          ; On                          ;
+; Force Use of Synchronous Clear Signals                           ; Off                         ; Off                         ;
+; Auto RAM Block Balancing                                         ; On                          ; On                          ;
+; Auto RAM to Logic Cell Conversion                                ; Off                         ; Off                         ;
+; Auto Resource Sharing                                            ; Off                         ; Off                         ;
+; Allow Any RAM Size For Recognition                               ; Off                         ; Off                         ;
+; Allow Any ROM Size For Recognition                               ; Off                         ; Off                         ;
+; Allow Any Shift Register Size For Recognition                    ; Off                         ; Off                         ;
+; Use LogicLock Constraints during Resource Balancing              ; On                          ; On                          ;
+; Ignore translate_off and synthesis_off directives                ; Off                         ; Off                         ;
+; Timing-Driven Synthesis                                          ; On                          ; On                          ;
+; Report Parameter Settings                                        ; On                          ; On                          ;
+; Report Source Assignments                                        ; On                          ; On                          ;
+; Report Connectivity Checks                                       ; On                          ; On                          ;
+; Ignore Maximum Fan-Out Assignments                               ; Off                         ; Off                         ;
+; Synchronization Register Chain Length                            ; 2                           ; 2                           ;
+; Power Optimization During Synthesis                              ; Normal compilation          ; Normal compilation          ;
+; HDL message level                                                ; Level2                      ; Level2                      ;
+; Suppress Register Optimization Related Messages                  ; Off                         ; Off                         ;
+; Number of Removed Registers Reported in Synthesis Report         ; 5000                        ; 5000                        ;
+; Number of Swept Nodes Reported in Synthesis Report               ; 5000                        ; 5000                        ;
+; Number of Inverted Registers Reported in Synthesis Report        ; 100                         ; 100                         ;
+; Clock MUX Protection                                             ; On                          ; On                          ;
+; Auto Gated Clock Conversion                                      ; Off                         ; Off                         ;
+; Block Design Naming                                              ; Auto                        ; Auto                        ;
+; SDC constraint protection                                        ; Off                         ; Off                         ;
+; Synthesis Effort                                                 ; Auto                        ; Auto                        ;
+; Shift Register Replacement - Allow Asynchronous Clear Signal     ; On                          ; On                          ;
+; Pre-Mapping Resynthesis Optimization                             ; Off                         ; Off                         ;
+; Analysis & Synthesis Message Level                               ; Medium                      ; Medium                      ;
+; Disable Register Merging Across Hierarchies                      ; Auto                        ; Auto                        ;
+; Resource Aware Inference For Block RAM                           ; On                          ; On                          ;
++------------------------------------------------------------------+-----------------------------+-----------------------------+
+
+
++------------------------------------------+
+; Parallel Compilation                     ;
++----------------------------+-------------+
+; Processors                 ; Number      ;
++----------------------------+-------------+
+; Number detected on machine ; 4           ;
+; Maximum allowed            ; 4           ;
+;                            ;             ;
+; Average used               ; 1.00        ;
+; Maximum used               ; 4           ;
+;                            ;             ;
+; Usage by Processor         ; % Time Used ;
+;     Processor 1            ; 100.0%      ;
+;     Processors 2-4         ;   0.0%      ;
++----------------------------+-------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Source Files Read                                                                                                               ;
++----------------------------------+-----------------+------------------------+--------------------------------------------------------------+---------+
+; File Name with User-Entered Path ; Used in Netlist ; File Type              ; File Name with Absolute Path                                 ; Library ;
++----------------------------------+-----------------+------------------------+--------------------------------------------------------------+---------+
+; Messbauer_CAMAC_Accumulator.v    ; yes             ; User Verilog HDL File  ; D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v ;         ;
++----------------------------------+-----------------+------------------------+--------------------------------------------------------------+---------+
+
+
++-------------------------------------------------------------------+
+; Analysis & Synthesis Resource Usage Summary                       ;
++---------------------------------------------+---------------------+
+; Resource                                    ; Usage               ;
++---------------------------------------------+---------------------+
+; Estimated Total logic elements              ; 12                  ;
+;                                             ;                     ;
+; Total combinational functions               ; 12                  ;
+; Logic element usage by number of LUT inputs ;                     ;
+;     -- 4 input functions                    ; 8                   ;
+;     -- 3 input functions                    ; 3                   ;
+;     -- <=2 input functions                  ; 1                   ;
+;                                             ;                     ;
+; Logic elements by mode                      ;                     ;
+;     -- normal mode                          ; 12                  ;
+;     -- arithmetic mode                      ; 0                   ;
+;                                             ;                     ;
+; Total registers                             ; 3                   ;
+;     -- Dedicated logic registers            ; 3                   ;
+;     -- I/O registers                        ; 0                   ;
+;                                             ;                     ;
+; I/O pins                                    ; 73                  ;
+;                                             ;                     ;
+; Embedded Multiplier 9-bit elements          ; 0                   ;
+;                                             ;                     ;
+; Maximum fan-out node                        ; State.data_exchange ;
+; Maximum fan-out                             ; 5                   ;
+; Total fan-out                               ; 123                 ;
+; Average fan-out                             ; 0.76                ;
++---------------------------------------------+---------------------+
+
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                 ;
++------------------------------+---------------------+---------------------------+-------------+--------------+---------+-----------+------+--------------+------------------------------+-----------------------------+--------------+
+; Compilation Hierarchy Node   ; Combinational ALUTs ; Dedicated Logic Registers ; Memory Bits ; DSP Elements ; DSP 9x9 ; DSP 18x18 ; Pins ; Virtual Pins ; Full Hierarchy Name          ; Entity Name                 ; Library Name ;
++------------------------------+---------------------+---------------------------+-------------+--------------+---------+-----------+------+--------------+------------------------------+-----------------------------+--------------+
+; |Messbauer_CAMAC_Accumulator ; 12 (12)             ; 3 (3)                     ; 0           ; 0            ; 0       ; 0         ; 73   ; 0            ; |Messbauer_CAMAC_Accumulator ; Messbauer_CAMAC_Accumulator ; work         ;
++------------------------------+---------------------+---------------------------+-------------+--------------+---------+-----------+------+--------------+------------------------------+-----------------------------+--------------+
+Note: For table entries with two numbers listed, the numbers in parentheses indicate the number of resources of the given type used by the specific entity alone. The numbers listed outside of parentheses indicate the total resources of the given type used by the specific entity and all of its sub-entities in the hierarchy.
+
+
+Encoding Type:  One-Hot
++--------------------------------------------------------------------------+
+; State Machine - |Messbauer_CAMAC_Accumulator|State                       ;
++---------------------+---------------------+-----------------+------------+
+; Name                ; State.data_exchange ; State.amplitude ; State.auto ;
++---------------------+---------------------+-----------------+------------+
+; State.data_exchange ; 0                   ; 0               ; 0          ;
+; State.auto          ; 1                   ; 0               ; 1          ;
+; State.amplitude     ; 1                   ; 1               ; 0          ;
++---------------------+---------------------+-----------------+------------+
+
+
++---------------------------------------------------------------------------------+
+; Registers Removed During Synthesis                                              ;
++----------------------------------------+----------------------------------------+
+; Register name                          ; Reason for Removal                     ;
++----------------------------------------+----------------------------------------+
+; address[2]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[1]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[0]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; x~reg0                                 ; Stuck at VCC due to stuck port data_in ;
+; address[11]~reg0                       ; Stuck at GND due to stuck port data_in ;
+; address[10]~reg0                       ; Stuck at GND due to stuck port data_in ;
+; address[9]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[8]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[7]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[6]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[5]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[4]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; address[3]~reg0                        ; Stuck at GND due to stuck port data_in ;
+; State.amplitude                        ; Lost fanout                            ;
+; Total Number of Removed Registers = 14 ;                                        ;
++----------------------------------------+----------------------------------------+
+
+
++------------------------------------------------------+
+; General Register Statistics                          ;
++----------------------------------------------+-------+
+; Statistic                                    ; Value ;
++----------------------------------------------+-------+
+; Total registers                              ; 3     ;
+; Number of registers using Synchronous Clear  ; 0     ;
+; Number of registers using Synchronous Load   ; 0     ;
+; Number of registers using Asynchronous Clear ; 0     ;
+; Number of registers using Asynchronous Load  ; 0     ;
+; Number of registers using Clock Enable       ; 0     ;
+; Number of registers using Preset             ; 0     ;
++----------------------------------------------+-------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Multiplexer Restructuring Statistics (Restructuring Performed)                                                                                       ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------------------+
+; Multiplexer Inputs ; Bus Width ; Baseline Area ; Area if Restructured ; Saving if Restructured ; Registered ; Example Multiplexer Output             ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------------------+
+; 5:1                ; 2 bits    ; 6 LEs         ; 4 LEs                ; 2 LEs                  ; No         ; |Messbauer_CAMAC_Accumulator|Selector0 ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+----------------------------------------+
+
+
++-----------------------------------------------------+
+; Post-Synthesis Netlist Statistics for Top Partition ;
++-----------------------+-----------------------------+
+; Type                  ; Count                       ;
++-----------------------+-----------------------------+
+; boundary_port         ; 73                          ;
+; cycloneiii_ff         ; 3                           ;
+;     plain             ; 3                           ;
+; cycloneiii_lcell_comb ; 14                          ;
+;     normal            ; 14                          ;
+;         0 data inputs ; 2                           ;
+;         2 data inputs ; 1                           ;
+;         3 data inputs ; 3                           ;
+;         4 data inputs ; 8                           ;
+;                       ;                             ;
+; Max LUT depth         ; 4.00                        ;
+; Average LUT depth     ; 3.04                        ;
++-----------------------+-----------------------------+
+
+
++-------------------------------+
+; Elapsed Time Per Partition    ;
++----------------+--------------+
+; Partition Name ; Elapsed Time ;
++----------------+--------------+
+; Top            ; 00:00:00     ;
++----------------+--------------+
+
+
++-------------------------------+
+; Analysis & Synthesis Messages ;
++-------------------------------+
+Info: *******************************************************************
+Info: Running Quartus Prime Analysis & Synthesis
+    Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+    Info: Processing started: Sat Jan 21 17:20:54 2023
+Info: Command: quartus_map --read_settings_files=on --write_settings_files=off Messbauer_CAMAC_Accumulator -c Messbauer_CAMAC_Accumulator
+Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
+Info (20030): Parallel compilation is enabled and will use 4 of the 4 processors detected
+Info (12021): Found 1 design units, including 1 entities, in source file messbauer_camac_accumulator.v
+    Info (12023): Found entity 1: Messbauer_CAMAC_Accumulator File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 1
+Info (12021): Found 0 design units, including 0 entities, in source file messbauer_camac_accumulator_tb.v
+Info (12021): Found 0 design units, including 0 entities, in source file count4.v
+Info (12021): Found 1 design units, including 1 entities, in source file 3always.v
+    Info (12023): Found entity 1: mem_ctrl_3 File: D:/Messbauer_CAMAC_Accumulator/3always.v Line: 1
+Info (12127): Elaborating entity "Messbauer_CAMAC_Accumulator" for the top level hierarchy
+Warning (10036): Verilog HDL or VHDL warning at Messbauer_CAMAC_Accumulator.v(21): object "counter2" assigned a value but never read File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 21
+Warning (10230): Verilog HDL assignment warning at Messbauer_CAMAC_Accumulator.v(155): truncated value with size 32 to match size of target (24) File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 155
+Warning (10034): Output port "write" at Messbauer_CAMAC_Accumulator.v(12) has no driver File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+Warning (13024): Output pins are stuck at VCC or GND
+    Warning (13410): Pin "write[0]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[1]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[2]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[3]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[4]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[5]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[6]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[7]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[8]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[9]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[10]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[11]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[12]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[13]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[14]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[15]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[16]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[17]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[18]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[19]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[20]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[21]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[22]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "write[23]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 12
+    Warning (13410): Pin "x" is stuck at VCC File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 13
+    Warning (13410): Pin "address[0]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[1]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[2]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[3]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[4]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[5]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[6]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[7]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[8]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[9]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[10]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+    Warning (13410): Pin "address[11]" is stuck at GND File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 89
+Info (286030): Timing-Driven Synthesis is running
+Info (17049): 1 registers lost all their fanouts during netlist optimizations.
+Info (144001): Generated suppressed messages file D:/Messbauer_CAMAC_Accumulator/output_files/Messbauer_CAMAC_Accumulator.map.smsg
+Info (16010): Generating hard_block partition "hard_block:auto_generated_inst"
+    Info (16011): Adding 0 node(s), including 0 DDIO, 0 PLL, 0 transceiver and 0 LCELL
+Warning (21074): Design contains 27 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "chanel" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 3
+    Warning (15610): No output dependent on input pin "count" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 5
+    Warning (15610): No output dependent on input pin "read[0]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[1]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[2]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[3]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[4]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[5]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[6]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[7]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[8]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[9]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[10]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[11]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[12]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[13]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[14]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[15]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[16]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[17]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[18]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[19]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[20]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[21]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[22]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "read[23]" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 9
+    Warning (15610): No output dependent on input pin "s1" File: D:/Messbauer_CAMAC_Accumulator/Messbauer_CAMAC_Accumulator.v Line: 10
+Info (21057): Implemented 85 device resources after synthesis - the final resource count might be different
+    Info (21058): Implemented 35 input pins
+    Info (21059): Implemented 38 output pins
+    Info (21061): Implemented 12 logic cells
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 70 warnings
+    Info: Peak virtual memory: 4762 megabytes
+    Info: Processing ended: Sat Jan 21 17:21:16 2023
+    Info: Elapsed time: 00:00:22
+    Info: Total CPU time (on all processors): 00:00:36
+
+
++------------------------------------------+
+; Analysis & Synthesis Suppressed Messages ;
++------------------------------------------+
+The suppressed messages can be found in D:/Messbauer_CAMAC_Accumulator/output_files/Messbauer_CAMAC_Accumulator.map.smsg.
+
+
