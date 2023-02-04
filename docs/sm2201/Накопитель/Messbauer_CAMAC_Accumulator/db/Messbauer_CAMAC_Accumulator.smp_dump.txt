@@ -1,6 +1,0 @@
-
-State Machine - |Messbauer_CAMAC_Accumulator|State
-Name State.data_exchange State.amplitude State.auto 
-State.data_exchange 0 0 0 
-State.auto 1 0 1 
-State.amplitude 1 1 0 
