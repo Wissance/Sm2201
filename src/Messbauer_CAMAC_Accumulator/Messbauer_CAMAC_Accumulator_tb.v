@@ -24,12 +24,12 @@ Messbauer_CAMAC_Accumulator uut
 .chanel(chanel),
 .start(start),
 .count(count),
-.f(f),
+.camac_f(f),
 .read(read),
-.s1(s1),
+.camac_s1(s1),
 .write(write),
-.x(x),
-.q(q),
+.camac_x(x),
+.camac_q(q),
 .address(address),
 .trig(trig)
 );

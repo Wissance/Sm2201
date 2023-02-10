@@ -1,17 +1,21 @@
 module Messbauer_CAMAC_Accumulator
 (
-    input chanel,
-    input start,
-	 input count,
-	 input [4:0] f,
+    // Общие сигналы управления: тактовая частота и чигнал сброса
 	 input clk,
 	 input rst,
-	 /*input*/ output reg [23:0] read,
-	 input s1,
-	 
+    // Спектрометрические сигналы
+    input chanel,
+    input start,
+	 input count,	 
+	 // CAMAC-сигналы
+	 // Сигналы управления адресацией юю
+	 input [4:0] camac_f,
+	
+	 input camac_s1,
+	  output reg [23:0] read,
 	 output reg [23:0] write,
-	 output reg x,
-	 output reg q,
+	 output reg camac_x,
+	 output reg camac_q,
 	 output reg [11:0] address,
 	 
 	 output reg trig
@@ -49,7 +53,7 @@ always @(*)
       //--------------------------------------
       data_exchange: 
         begin
-          if(f == 5'b11010) //запрос перехода в автономный режим
+          if(camac_f == 5'b11010) //запрос перехода в автономный режим
             begin
 				if(start == 1'b1) //Ожидание команды start
 					begin
@@ -61,7 +65,7 @@ always @(*)
 					end
             end
           else
-				if(f == 5'b11000) //запрос перехода в амплитудный анализ
+				if(camac_f == 5'b11000) //запрос перехода в амплитудный анализ
 					begin
 					NextState = amplitude;
 					end
@@ -69,7 +73,7 @@ always @(*)
       //--------------------------------------
       auto:
         begin
-          if(f == 5'b01011) //запрос перехода в программный обмен
+          if(camac_f == 5'b01011) //запрос перехода в программный обмен
             begin
               NextState = data_exchange;
             end            
@@ -77,7 +81,7 @@ always @(*)
       //--------------------------------------
       amplitude:
         begin
-          if(f == 5'b01011) //запрос перехода в программный обмен
+          if(camac_f == 5'b01011) //запрос перехода в программный обмен
             begin
               NextState = data_exchange;
             end
@@ -93,8 +97,8 @@ always @(posedge clk)
   begin
     if(rst)
       begin
-        q <= 1'b1;
-		  x <= 1'b1;
+        camac_q <= 1'b1;
+		  camac_x <= 1'b1;
 		  address = 12'b0;
 		  trig <= 1'b0;
         end
@@ -106,39 +110,39 @@ always @(posedge clk)
           //--------------------------------------
           data_exchange: 
             begin
-              q <= 1'b1;
-              x <= 1'b1;
+              camac_q <= 1'b1;
+              camac_x <= 1'b1;
 				  
-				  if ((f == 5'b01001) && (s1 == 1'b1))//сброс счетчиков
+				  if ((camac_f == 5'b01001) && (camac_s1 == 1'b1))//сброс счетчиков
 				  begin
 					counter1 = 24'b0;
 					counter2 = 24'b0;
 					current_counter <= counter1;
 				  end
 				  
-				  if ((f == 5'b10001) && (s1 == 1'b1))//перезапись регистра адреса
+				  if ((camac_f == 5'b10001) && (camac_s1 == 1'b1))//перезапись регистра адреса
 				  begin
 					//перезапись регистра адреса
 					address <= 8'b11111111;
 				  end
 				  
-				  if ((f == 5'b10000) && (s1 == 1'b1))//Запись данных в ячейку ОЗУ
+				  if ((camac_f == 5'b10000) && (camac_s1 == 1'b1))//Запись данных в ячейку ОЗУ
 				  begin
 					//Запись данных в ячейку ОЗУ
 					read <= 0;
 					write <= 8'b10101010;
 				  end				  
 				  
-				  if (f == 5'b00000)//Чтение ОЗУ
+				  if (camac_f == 5'b00000)//Чтение ОЗУ
 				  begin
 					//Чтение ОЗУ
 					write <= 0;
 					read <= 8'b10101010;
 				  end
 				  
-				  if (f == 5'b11011)//проверка q
+				  if (camac_f == 5'b11011)//проверка q
 				  begin
-					q <= q;
+					camac_q <= camac_q;
 				  end
 				  
             end
@@ -146,17 +150,17 @@ always @(posedge clk)
           //--------------------------------------
           auto:
             begin
-              q <= 1'b0;
-              x <= 1'b1;
+              camac_q <= 1'b0;
+              camac_x <= 1'b1;
 				  
 				  if(start == 1'b1) // сброс регистрва адреса
 					begin
 						address <= 0;
 					end
 					
-				  if (f == 5'b11011)//проверка q
+				  if (camac_f == 5'b11011)//проверка q
 				  begin
-					q <= q;
+					camac_q <= camac_q;
 				  end
 				  
 				  if(count == 1'b1) // Счетчик
@@ -199,17 +203,17 @@ always @(posedge clk)
           //--------------------------------------
           amplitude:
             begin
-              q <= 1'b1;
-              x <= 1'b1;
+              camac_q <= 1'b1;
+              camac_x <= 1'b1;
 				  
 				  if(start == 1'b1) // сброс регистрва адреса
 					begin
 						address <= 0;
 					end
 					
-				  if (f == 5'b11011)//проверка q
+				  if (camac_f == 5'b11011)//проверка q
 				  begin
-					q <= q;
+				     camac_q <= camac_q;
 				  end
 				  
 				  if(count == 1'b1) // Счетчик
@@ -218,7 +222,7 @@ always @(posedge clk)
 					//current_counter <= 4'b1101;
 				  end
 				  
-				  if((f == 5'b11001) && (s1 == 1'b1))
+				  if((camac_f == 5'b11001) && (camac_s1 == 1'b1))
 				  begin
 				  // Смена счетчиков
 					if(trig == 0)
