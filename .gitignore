@@ -55,3 +55,10 @@ src/Messbauer_CAMAC_Accumulator/db/
 src/Messbauer_CAMAC_Accumulator/incremental_db/
 src/Messbauer_CAMAC_Accumulator/output_files/
 *.bak
+*.sdo
+
+*.vo
+
+src/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.sft
+
+docs/sm2201/Накопитель/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.sft
