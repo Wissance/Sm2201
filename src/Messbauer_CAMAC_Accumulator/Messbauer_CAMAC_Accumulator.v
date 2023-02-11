@@ -1,24 +1,43 @@
+//////////////////////////////////////////////////////////////////////////////////
+// Company:        Wissance (https://wissance.com)
+// Engineer:       EvilLord666 (Ushakov MV), Verroneros
+// 
+// Create Date:    22/12/2022 
+// Design Name: 
+// Module Name:    Messbauer_CAMAC_Accumulator
+// Project Name:   Messbauer_CAMAC_Accumulator
+// Target Devices: Cyclone IV ()
+// Tool versions:  Quartus Prime Lite 18.1
+// Description:    CAMAC блок накопления спектрометра СМ2201 (SM2201)
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 1.0
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Accumulator
 (
     // Общие сигналы управления: тактовая частота и чигнал сброса
-	 input clk,
-	 input rst,
+    input clk,
+    input rst,
     // Спектрометрические сигналы
-    input chanel,
+    input chanel,  
     input start,
-	 input count,	 
-	 // CAMAC-сигналы
-	 // Сигналы управления адресацией юю
-	 input [4:0] camac_f,
-	
-	 input camac_s1,
-	  output reg [23:0] read,
-	 output reg [23:0] write,
-	 output reg camac_x,
-	 output reg camac_q,
-	 output reg [11:0] address,
-	 
-	 output reg trig
+    input count,
+    // CAMAC-сигналы
+    // Сигналы управления адресацией юю
+    input [4:0] camac_f,
+
+    input camac_s1,
+    output reg [23:0] read,
+    output reg [23:0] write,
+    output reg camac_x,
+    output reg camac_q,
+    output reg [11:0] address,
+
+    output reg trig
 );
 //------------------------------------------------------
 reg [1:0] State;
