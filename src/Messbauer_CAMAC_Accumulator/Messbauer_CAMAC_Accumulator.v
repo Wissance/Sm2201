@@ -46,6 +46,25 @@ module Messbauer_CAMAC_Accumulator #
 
     output reg trig  // ?
 );
+
+localparam reg [3:0] MESSB_ACC_INITIAL_STATE = 0;
+localparam reg [3:0] MESSB_ACC_RESETED_STATE = 1;
+localparam reg [3:0] MESSB_ACC_DATA_EXCH_STATE = 2;
+localparam reg [3:0] MESSB_ACC_AUTONOMOUS_MODE_STATE = 3;
+localparam reg [3:0] MESSB_ACC_AMPLITUDE_MODE_STATE = 4;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE = 5;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_ADDR_SEL_STATE = 6;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE = 7;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_COUNTER2_COUNT_STATE = 8;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE = 9;
+localparam reg [3:0] MESSB_ACC_ACCUMULATION_CYCLE_FINISHED_STATE = 10;
+
+
+
+always @(posedge clk)
+begin
+end
+/*
 //------------------------------------------------------
 reg [1:0] State;
 reg [1:0] NextState;
@@ -213,7 +232,7 @@ always @(posedge clk)
 						trig <= 1'b0;
 						//Запись данных из неактивного счётчика в ОЗУ
 					end
-
+*/
 					/*
 					Адрес +2
 					
@@ -221,6 +240,7 @@ always @(posedge clk)
 					
 					Адрес -1
 					*/
+					/*
 					
 				  end
 				  
@@ -266,7 +286,7 @@ always @(posedge clk)
 						trig <= 0;
 						//Запись данных из неактивного счётчика в ОЗУ
 					end
-
+*/
 					/*
 					Адрес +2
 					
@@ -274,6 +294,7 @@ always @(posedge clk)
 					
 					Адрес -1
 					*/
+					/*
 					
 				  end
 				  
@@ -284,6 +305,7 @@ always @(posedge clk)
       end
   end
 //-------------------------------------------
+*/
 endmodule
 
 
