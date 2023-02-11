@@ -17,7 +17,12 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module Messbauer_CAMAC_Accumulator
+module Messbauer_CAMAC_Accumulator #
+(
+    CAMAC_DATA_WIDTH = 24,
+    CAMAC_FUNC_WIDTH = 5,
+    MESSB_ACC_ADDRESS_WIDTH = 12
+)
 (
     // Общие сигналы управления: тактовая частота и чигнал сброса
     input clk,
@@ -26,18 +31,20 @@ module Messbauer_CAMAC_Accumulator
     input chanel,  
     input start,
     input count,
+    output reg [MESSB_ACC_ADDRESS_WIDTH:0] address,
+
     // CAMAC-сигналы
     // Сигналы управления адресацией юю
-    input [4:0] camac_f,
+    input [CAMAC_FUNC_WIDTH-1:0] camac_f,
 
     input camac_s1,
-    output reg [23:0] read,
-    output reg [23:0] write,
+    output reg [CAMAC_DATA_WIDTH-1:0] read,  // should be input && rename
+    output reg [CAMAC_DATA_WIDTH-1:0] write,
     output reg camac_x,
     output reg camac_q,
-    output reg [11:0] address,
+    
 
-    output reg trig
+    output reg trig  // ?
 );
 //------------------------------------------------------
 reg [1:0] State;
