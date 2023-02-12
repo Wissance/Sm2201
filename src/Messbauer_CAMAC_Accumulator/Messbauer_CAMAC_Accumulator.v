@@ -25,13 +25,13 @@ module Messbauer_CAMAC_Accumulator #
 )
 (
     // Общие сигналы управления: тактовая частота и чигнал сброса
-    input clk,
-    input rst,
+    input wire clk,
+    input wire rst,
     // Спектрометрические сигналы
-    input chanel,  
-    input start,
-    input count,
-    output reg [MESSB_ACC_ADDRESS_WIDTH:0] address,
+    input wire chanel,  
+    input wire start,
+    input wire count,
+    //output reg [MESSB_ACC_ADDRESS_WIDTH:0] address,
 
     // CAMAC-сигналы
     // Сигналы управления адресацией юю
@@ -47,6 +47,8 @@ module Messbauer_CAMAC_Accumulator #
     output reg trig  // ?
 );
 
+/******************************* Блок констант ***********************************/
+// 1. Состояния конечного автомата
 localparam reg [3:0] MESSB_ACC_INITIAL_STATE = 0;
 localparam reg [3:0] MESSB_ACC_RESETED_STATE = 1;
 localparam reg [3:0] MESSB_ACC_DATA_EXCH_STATE = 2;
@@ -58,12 +60,22 @@ localparam reg [3:0] MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE = 7;
 localparam reg [3:0] MESSB_ACC_ACCUMULATION_COUNTER2_COUNT_STATE = 8;
 localparam reg [3:0] MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE = 9;
 localparam reg [3:0] MESSB_ACC_ACCUMULATION_CYCLE_FINISHED_STATE = 10;
-
+// 2. Констаны, определяющие связь постоянных значений с функциями
 localparam reg [3:0] DELAY_BEFORE_EXCH_READY = 10;
-
-reg [3:0] state;
-reg [3:0] delay_counter;
-
+localparam reg [CAMAC_FUNC_WIDTH-1:0] AMPLITUDE_MODE_FUNC = 24;
+localparam reg [CAMAC_FUNC_WIDTH-1:0] AUTONOMOUS_MODE_FUNC = 26;
+localparam reg [1:0] AMPLITUDE_MODE = 1;
+localparam reg [1:0] AUTONOMOUS_MODE = 2;
+/*********************************************************************************/
+/******************************* Блок переменных *********************************/
+reg [3:0] state;                         // состояние блока накопления. см. диаграмму
+reg [3:0] delay_counter;                 // счетчик задержек, для перехода между состояниями
+reg [1:0] mode;                          // режим измерения
+reg start_trigger;                       // триггер старт-импульса
+reg [MESSB_ACC_ADDRESS_WIDTH:0] address; // адрес текущей точки спектра
+/*********************************************************************************/
+/****************** Блок описания поведения работы накопителя ********************/
+// Блок логики смены состояний
 always @(posedge clk)
 begin
     if (rst == 1'b1)
@@ -71,6 +83,7 @@ begin
         state <= MESSB_ACC_RESETED_STATE;
         delay_counter <= 0;
         // todo(UMV) : добавить инициализацию остальных регистров
+        address <= 0;
     end
     else
     begin
@@ -88,7 +101,19 @@ begin
             /* ожидание команды, выбор между 1 из 2 режимов: MESSB_ACC_AUTONOMOUS_MODE_STATE или 
                MESSB_ACC_AMPLITUDE_MODE_STATE
              */
-            
+            if (camac_f == AMPLITUDE_MODE_FUNC)
+            begin
+                state <= MESSB_ACC_AMPLITUDE_MODE_STATE;
+                mode <= AMPLITUDE_MODE;
+            end
+            else
+            begin
+               if (camac_f == AMPLITUDE_MODE_FUNC)
+                begin
+                    state <= MESSB_ACC_AUTONOMOUS_MODE_STATE;
+                    mode <= AUTONOMOUS_MODE;
+                end
+            end
             end
             MESSB_ACC_AUTONOMOUS_MODE_STATE:
             begin
@@ -97,10 +122,15 @@ begin
             begin
             end
             MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE:
-            /* В этом состоянии идет генерация старт-импульса -> ----___--------------------------
-             * Ожидаем начало генерации
+            /* В этом состоянии идет ожидание генерации старт-импульса -> ----___--------------------------
              */
             begin
+                if (start_trigger)
+                begin
+                    // инициализация
+                    address <= 0;
+                    state <= MESSB_ACC_ACCUMULATION_ADDR_SEL_STATE;
+                end
             end
             MESSB_ACC_ACCUMULATION_ADDR_SEL_STATE:
             begin
@@ -126,6 +156,17 @@ begin
         endcase
     end
 end
+
+// Блок ожидания Старт-импульса
+always @(start)
+begin
+    if (state == MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE)
+        if (start == 1'b1)
+            start_trigger <= 1'b1;
+    else
+        start_trigger <= 1'b0;
+end
+/*********************************************************************************/
 /*
 //------------------------------------------------------
 reg [1:0] State;
