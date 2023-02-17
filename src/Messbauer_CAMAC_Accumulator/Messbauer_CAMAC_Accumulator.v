@@ -28,7 +28,7 @@ module Messbauer_CAMAC_Accumulator #
     input wire clk,
     input wire rst,
     // Спектрометрические сигналы
-    input wire chanel,  
+    input wire channel,  
     input wire start,
     input wire count,
     //output reg [MESSB_ACC_ADDRESS_WIDTH:0] address,
