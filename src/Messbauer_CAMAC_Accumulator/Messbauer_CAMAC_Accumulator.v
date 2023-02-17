@@ -68,12 +68,18 @@ localparam reg [1:0] AMPLITUDE_MODE = 1;
 localparam reg [1:0] AUTONOMOUS_MODE = 2;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
-reg [3:0] state;                         // состояние блока накопления. см. диаграмму
-reg [3:0] delay_counter;                 // счетчик задержек, для перехода между состояниями
-reg [1:0] mode;                          // режим измерения
-reg start_trigger;                       // триггер старт-импульса
-reg [MESSB_ACC_ADDRESS_WIDTH:0] address; // адрес текущей точки спектра
+reg [3:0] state;                           // состояние блока накопления. см. диаграмму
+reg [3:0] delay_counter;                   // счетчик задержек, для перехода между состояниями
+reg [1:0] mode;                            // режим измерения
+reg start_trigger;                         // триггер старт-импульса
+reg [MESSB_ACC_ADDRESS_WIDTH-1:0] address; // адрес текущей точки спектра
+reg current_counter;                       // текущий используемый счетчик
+reg [CAMAC_DATA_WIDTH-1:0] current_value;  // текущее значение
+reg channel_switched;                      // триггер переклбчения канал-импульса
+reg channel_data_accumulated;              // регистр, используемый для 
+wire channel_trigger_rst;                  // эффективный сигнал сброса триггера канала
 /*********************************************************************************/
+assign channel_trigger_rst = rst & channel_data_accumulated;
 /****************** Блок описания поведения работы накопителя ********************/
 // Блок логики смены состояний
 always @(posedge clk)
@@ -84,6 +90,7 @@ begin
         delay_counter <= 0;
         // todo(UMV) : добавить инициализацию остальных регистров
         address <= 0;
+        channel_data_accumulated <= 1'b0;
     end
     else
     begin
@@ -98,34 +105,36 @@ begin
             end
             MESSB_ACC_DATA_EXCH_STATE:
             begin
-            /* ожидание команды, выбор между 1 из 2 режимов: MESSB_ACC_AUTONOMOUS_MODE_STATE или 
-               MESSB_ACC_AMPLITUDE_MODE_STATE
-             */
-            if (camac_f == AMPLITUDE_MODE_FUNC)
-            begin
-                state <= MESSB_ACC_AMPLITUDE_MODE_STATE;
-                mode <= AMPLITUDE_MODE;
-            end
-            else
-            begin
-               if (camac_f == AMPLITUDE_MODE_FUNC)
+                /* ожидание команды, выбор между 1 из 2 режимов: MESSB_ACC_AUTONOMOUS_MODE_STATE или 
+                   MESSB_ACC_AMPLITUDE_MODE_STATE
+                 */
+                if (camac_f == AMPLITUDE_MODE_FUNC)
                 begin
-                    state <= MESSB_ACC_AUTONOMOUS_MODE_STATE;
-                    mode <= AUTONOMOUS_MODE;
+                    state <= MESSB_ACC_AMPLITUDE_MODE_STATE;
                 end
-            end
+                else
+                begin
+                    if (camac_f == AUTONOMOUS_MODE_FUNC)
+                    begin
+                        state <= MESSB_ACC_AUTONOMOUS_MODE_STATE;
+                    end
+                end
             end
             MESSB_ACC_AUTONOMOUS_MODE_STATE:
             begin
+                mode <= AUTONOMOUS_MODE;
+                // todo(UMV): add stop condition
             end
             MESSB_ACC_AMPLITUDE_MODE_STATE:
             begin
+                mode <= AMPLITUDE_MODE;
+                // todo(UMV): add stop condition
             end
             MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE:
-            /* В этом состоянии идет ожидание генерации старт-импульса -> ----___--------------------------
+            /* В этом состоянии идет ожидание генерации старт-импульса -> ---__--------------------------
              */
             begin
-                if (start_trigger)
+                if (start_trigger == 1'b1)
                 begin
                     // инициализация
                     address <= 0;
@@ -134,18 +143,36 @@ begin
             end
             MESSB_ACC_ACCUMULATION_ADDR_SEL_STATE:
             begin
+                if (address[0] == 1'b0)
+                    state <= MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE;
             end
             MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE:
             begin
+                current_counter <= 1'b0;
+                // ждем окончания канала ...
+                // по завершении копируем в блок памяти в ПЛИС, переходим в MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE
+                if (channel_switched == 1'b1)
+                begin
+                    state <= MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE;
+                end
             end
             MESSB_ACC_ACCUMULATION_COUNTER2_COUNT_STATE:
             begin
+                current_counter <= 1'b1;
+                // ждем окончания канала ...
+                // по завершении копируем в блок памяти в ПЛИС, переходим в MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE
+                if (channel_switched == 1'b1)
+                begin
+                    state <= MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE;
+                end
             end
             MESSB_ACC_ACCUMULATION_VALUE_COPY_STATE:
            /*
                здесь осуществляется перенос значения в ячейку памяти -> s[i] = s[i] + value
             */
             begin
+                address <= address + 1;
+                channel_data_accumulated <= 1'b1;
             end
             MESSB_ACC_ACCUMULATION_CYCLE_FINISHED_STATE:
             begin
@@ -165,6 +192,37 @@ begin
             start_trigger <= 1'b1;
     else
         start_trigger <= 1'b0;
+end
+
+// Блок подсчета импульсов
+always @(posedge count or posedge rst)
+begin
+    // асинхронный сброс для задания начального значения для current_value
+    if (rst == 1'b1)
+    begin
+        current_value <= 0;
+    end
+    else
+    begin
+        current_value <= current_value + 1;
+    end
+end
+
+/* Блок смены адреса точки спектра, переключение из 1 в 0 обозначает начало накопления
+ * в новую ячейку
+ * start   -----_-----------------------------------------------------------.....------_----....
+ * channel -----__----------------__----------------__-----------------__---.....------__---....
+ */
+always @(negedge channel or posedge channel_trigger_rst)
+begin
+if (channel_trigger_rst == 1'b1)
+    begin
+        channel_switched <= 1'b0;
+    end
+    else
+    begin
+        channel_switched <= 1'b1;
+    end
 end
 /*********************************************************************************/
 /*
