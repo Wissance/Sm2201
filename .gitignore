@@ -62,3 +62,5 @@ src/Messbauer_CAMAC_Accumulator/output_files/
 src/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.sft
 
 docs/sm2201/Накопитель/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.sft
+
+*.xrf
