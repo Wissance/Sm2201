@@ -198,6 +198,7 @@ begin
                 begin
                     address <= address + 1;
                     state <= MESSB_ACC_ACCUMULATION_ADDR_SEL_STATE;
+                    channel_data_accumulated <= 1'b0;
                 end
             end
             MESSB_ACC_ACCUMULATION_CYCLE_FINISHED_STATE:
@@ -205,7 +206,8 @@ begin
             /* Последовательно были измерены все точки спектра от 0 до 2^12-1 (4095)
              * В этом состоянии очищаем все временные значения если необходимо, готовимся к следующему циклу
              */
-            state <= MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE;
+                state <= MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE;
+                address <= 0;
             end
         endcase
     end
