@@ -74,10 +74,15 @@ reg [1:0] mode;                            // режим измерения
 reg start_trigger;                         // триггер старт-импульса
 reg [MESSB_ACC_ADDRESS_WIDTH-1:0] address; // адрес текущей точки спектра
 reg current_counter;                       // текущий используемый счетчик
-reg [CAMAC_DATA_WIDTH-1:0] current_value;  // текущее значение
-reg channel_switched;                      // триггер переклбчения канал-импульса
+//reg [CAMAC_DATA_WIDTH-1:0] current_value;  // текущее значение
+reg [CAMAC_DATA_WIDTH-1:0] counter1_value; // текущее значение накопленное в счетчике 1
+reg [CAMAC_DATA_WIDTH-1:0] counter2_value; // текущее значение накопленное в счетчике 2
+reg channel_switched;                      // триггер переключения канал-импульса
+// специальный синтаксис 2 ** MESSB_ACC_ADDRESS_WIDTH = 2 в степени
+reg [CAMAC_DATA_WIDTH-1:0] spectrum [2**MESSB_ACC_ADDRESS_WIDTH];
 reg channel_data_accumulated;              // регистр, используемый для 
 wire channel_trigger_rst;                  // эффективный сигнал сброса триггера канала
+integer i;                                 // Переменная для цикла for для инициализации спектра
 /*********************************************************************************/
 assign channel_trigger_rst = rst & channel_data_accumulated;
 /****************** Блок описания поведения работы накопителя ********************/
@@ -91,6 +96,10 @@ begin
         // todo(UMV) : добавить инициализацию остальных регистров
         address <= 0;
         channel_data_accumulated <= 1'b0;
+        for (i = 0; i < 2 ** MESSB_ACC_ADDRESS_WIDTH; i = i+1)
+        begin
+            spectrum[i] <= 0;
+        end
     end
     else
     begin
@@ -172,6 +181,7 @@ begin
             */
             begin
                 address <= address + 1;
+                
                 channel_data_accumulated <= 1'b1;
             end
             MESSB_ACC_ACCUMULATION_CYCLE_FINISHED_STATE:
@@ -200,11 +210,16 @@ begin
     // асинхронный сброс для задания начального значения для current_value
     if (rst == 1'b1)
     begin
-        current_value <= 0;
+        // тут нужен "хитрый сброс"
+        counter1_value <= 0;
+        counter2_value <= 0;
     end
     else
     begin
-        current_value <= current_value + 1;
+        if (current_counter == 1'b0)
+            counter1_value <= counter1_value + 1;
+        else
+            counter2_value <= counter2_value + 1;
     end
 end
 
@@ -221,7 +236,8 @@ if (channel_trigger_rst == 1'b1)
     end
     else
     begin
-        channel_switched <= 1'b1;
+        if (address > 0)
+            channel_switched <= 1'b1;
     end
 end
 /*********************************************************************************/
