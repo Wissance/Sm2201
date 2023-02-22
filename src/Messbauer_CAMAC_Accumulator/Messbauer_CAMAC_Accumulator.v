@@ -156,6 +156,7 @@ begin
             MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE:
             /* В этом состоянии идет ожидание генерации старт-импульса -> ---__--------------------------
              */
+             //todo (umv): добавить обработку переключения канал-импульса в амплитудном режиме
             begin
                 if (start_trigger == 1'b1)
                 begin
@@ -168,6 +169,7 @@ begin
             begin
                 if (address[0] == 1'b0)
                     state <= MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE;
+                // todo (umv): добавить выбор счечтчика 2
             end
             MESSB_ACC_ACCUMULATION_COUNTER1_COUNT_STATE:
             begin
@@ -226,10 +228,11 @@ begin
 end
 
 // Блок ожидания Старт-импульса
+// -----__----
 always @(start)
 begin
     if (state == MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE)
-        if (start == 1'b1)
+        if (start == 1'b0)
             start_trigger <= 1'b1;
     else
         start_trigger <= 1'b0;
