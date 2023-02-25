@@ -52,3 +52,9 @@ Mkfile.old
 dkms.conf
 
 src/Messbauer_CAMAC_Controller/db/
+
+*.bak
+
+src/Messbauer_CAMAC_Controller/output_files/
+
+src/Messbauer_CAMAC_Controller/incremental_db/compiled_partitions/
