@@ -58,3 +58,5 @@ src/Messbauer_CAMAC_Controller/db/
 src/Messbauer_CAMAC_Controller/output_files/
 
 src/Messbauer_CAMAC_Controller/incremental_db/compiled_partitions/
+
+src/Messbauer_CAMAC_Controller/incremental_db/
