@@ -10,18 +10,22 @@
 // Tool versions:  Quartus Prime Lite 18.1
 // Description:    CAMAC блок накопления спектрометра СМ2201 (SM2201)
 //
-// Dependencies: 
+// Dependencies:   Без внешних зависимостей
 //
-// Revision: 
-// Revision 1.0
+// Revision:       1.0
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Accumulator #
 (
+    // ширина данных CAMAC
     CAMAC_DATA_WIDTH = 24,
+    // ширина данных линии функция (количество бит)
     CAMAC_FUNC_WIDTH = 5,
+    // число бит адреса накопителя (в SM-2201 число точек в спектре = 2^12 = 4096)
     MESSB_ACC_ADDRESS_WIDTH = 12
+    // использование С1 для генерации переключения следующего канала (если == 0) или внутренний генератор (если == 1)
+    USE_INTERNAL_AMPL_CHANNEL_SWITCH = 0
 )
 (
     // Общие сигналы управления: тактовая частота и чигнал сброса
