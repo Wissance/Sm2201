@@ -23,7 +23,7 @@ module Messbauer_CAMAC_Accumulator #
     // ширина данных линии функция (количество бит)
     CAMAC_FUNC_WIDTH = 5,
     // число бит адреса накопителя (в SM-2201 число точек в спектре = 2^12 = 4096)
-    MESSB_ACC_ADDRESS_WIDTH = 12
+    MESSB_ACC_ADDRESS_WIDTH = 12,
     // использование С1 для генерации переключения следующего канала (если == 0) или внутренний генератор (если == 1)
     USE_INTERNAL_AMPL_CHANNEL_SWITCH = 0
 )
@@ -68,6 +68,7 @@ localparam reg [CAMAC_FUNC_WIDTH-1:0] AUTONOMOUS_MODE_FUNC = 26;
 localparam reg [1:0] AMPLITUDE_MODE = 1;
 localparam reg [1:0] AUTONOMOUS_MODE = 2;
 localparam reg [MESSB_ACC_ADDRESS_WIDTH-1:0] LAST_ADDRESS = 2**MESSB_ACC_ADDRESS_WIDTH - 1;
+localparam reg [7:0] INERNAL_CHANNEL_COUNT_SWITCH_VALUE = 8'b100;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
 reg [3:0] state;                           // состояние блока накопления. см. диаграмму
@@ -80,10 +81,14 @@ reg [CAMAC_DATA_WIDTH-1:0] current_value;  // текущее значение
 reg [CAMAC_DATA_WIDTH-1:0] counter1_value; // текущее значение накопленное в счетчике 1
 reg [CAMAC_DATA_WIDTH-1:0] counter2_value; // текущее значение накопленное в счетчике 2
 reg channel_switched;                      // триггер переключения канал-импульса
+reg generated_channel;                     // генерируемы канал-импульс в амплиткдном режиме для случая USE_INTERNAL_AMPL_CHANNEL_SWITCH == 0
+reg [7:0] generated_channel_counter;       // счетчик переключения генерируемого
 // специальный синтаксис 2 ** MESSB_ACC_ADDRESS_WIDTH = 2 в степени
 reg [CAMAC_DATA_WIDTH-1:0] spectrum [2**MESSB_ACC_ADDRESS_WIDTH];
 reg channel_data_accumulated;              // регистр, используемый для 
 wire acc_event_rst;                        // эффективный сигнал сброса триггера канала и очистки счетсчика импульсов
+wire ampl_mode_channel;                    // канал-импульс в амплитудном режиме
+wire internal_channel;                     // мультиплексируемый канал-импульс
 integer i;                                 // Переменная для цикла for для инициализации спектра
 /*********************************************************************************/
 assign acc_event_rst = rst | channel_data_accumulated;
@@ -167,7 +172,7 @@ begin
              */
              //todo (umv): добавить обработку переключения канал-импульса в амплитудном режиме
             begin
-                if (start_trigger == 1'b1)
+                if (start_trigger == 1'b1 || mode == AMPLITUDE_MODE)
                 begin
                     // запуск накопления от 0 до 2^MESSB_ACC_ADDRESS_WIDTH - 1 точки
                     address <= 0;
@@ -239,6 +244,27 @@ begin
     end
 end
 
+// Блок генерации внутреннего канал-импульса
+always @(posedge clk)
+begin
+    if (rst == 1'b1)
+    begin
+        generated_channel <= 1'b0;
+        generated_channel_counter <= 8'b0;
+    end
+    else
+    begin
+       if (USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b0)
+       begin
+           generated_channel_counter <= generated_channel_counter + 1;
+           if (generated_channel_counter == INERNAL_CHANNEL_COUNT_SWITCH_VALUE)
+           begin
+              generated_channel <= ~generated_channel;
+           end
+       end
+    end
+end
+
 // Блок ожидания Старт-импульса
 // -----__----
 always @(start)
@@ -281,7 +307,7 @@ begin
     end
 end
 
-/* Блок смены адреса точки спектра с асинхронным сбросом
+/* Блок смены адреса точки спектра в мессбауэровском режиме с асинхронным сбросом
  * start   -----_-----------------------------------------------------------.....------_----....
  * channel -----__----------------__----------------__-----------------__---.....------__---....
  */
@@ -297,6 +323,11 @@ if (acc_event_rst == 1'b1)
             channel_switched <= 1'b1;
     end
 end
+
+/* Блок смены адреса точки спектра в амплитудном режиме по КАМАК команде NF(25)A(0-15)S1
+ *
+ */
+
 
 endmodule
 
