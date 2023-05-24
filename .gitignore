@@ -64,3 +64,9 @@ src/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.
 docs/sm2201/Накопитель/Messbauer_CAMAC_Accumulator/simulation/modelsim/Messbauer_CAMAC_Accumulator.sft
 
 *.xrf
+
+src/Messbauer_CAMAC_Controller/db/
+
+src/Messbauer_CAMAC_Controller/incremental_db/
+
+src/Messbauer_CAMAC_Controller/output_files/
