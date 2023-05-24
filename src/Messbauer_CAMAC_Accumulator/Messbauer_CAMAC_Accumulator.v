@@ -92,6 +92,9 @@ wire internal_channel;                     // мультиплексируемы
 integer i;                                 // Переменная для цикла for для инициализации спектра
 /*********************************************************************************/
 assign acc_event_rst = rst | channel_data_accumulated;
+// todo(UMV): если используется s1 от КАМАК, то не учитывается вся команда целиком NF(25)A(0-15)
+assign ampl_mode_channel = USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b1 ? generated_channel_counter : camac_s1;
+assign internal_channel = mode == AMPLITUDE_MODE ? ampl_mode_channel : channel;
 /****************** Блок описания поведения работы накопителя ********************/
 // Блок логики смены состояний
 always @(posedge clk)
@@ -254,7 +257,7 @@ begin
     end
     else
     begin
-       if (USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b0)
+       if (USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b1)
        begin
            generated_channel_counter <= generated_channel_counter + 1;
            if (generated_channel_counter == INERNAL_CHANNEL_COUNT_SWITCH_VALUE)
@@ -307,11 +310,13 @@ begin
     end
 end
 
-/* Блок смены адреса точки спектра в мессбауэровском режиме с асинхронным сбросом
+/* Блок смены адреса точки спектра асинхронным сбросом
  * start   -----_-----------------------------------------------------------.....------_----....
  * channel -----__----------------__----------------__-----------------__---.....------__---....
+ * В качестве канал-импульса использован internal_channel, мультиплексирующий в зависимости от режима 
+ * канал-импульс как для автономного (мессбауэровского режима), так и для амплитудного
  */
-always @(negedge channel or posedge acc_event_rst)
+always @(negedge internal_channel or posedge acc_event_rst)
 begin
 if (acc_event_rst == 1'b1)
     begin
