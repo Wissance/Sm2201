@@ -38,18 +38,21 @@ module Messbauer_CAMAC_Accumulator #
     //output reg [MESSB_ACC_ADDRESS_WIDTH:0] address,
 
     // CAMAC-сигналы
-    // Сигналы управления адресацией юю
-    input [CAMAC_FUNC_WIDTH-1:0] camac_f,
+    // Сигналы управления адресацией
+    input wire [CAMAC_FUNC_WIDTH-1:0] camac_f,
 
-    input camac_s1,
-    output reg [CAMAC_DATA_WIDTH-1:0] read,  // should be input && rename
-    output reg [CAMAC_DATA_WIDTH-1:0] write,
+    input wire camac_b,  // занято (busy)
+    input wire camac_s1, // строб S1
+    input wire camac_c,  // C - сброс (при С=1 установка регистров в начальное значение)
+    input wire [CAMAC_DATA_WIDTH-1:0] camac_read,  // should be input && rename
+    output reg [CAMAC_DATA_WIDTH-1:0] camac_write,
     output reg camac_x,
+    output reg camac_l,  // L - запрос на об
     output reg camac_q
 );
 
 /******************************* Блок констант ***********************************/
-// 1. Состояния конечного автомата
+// 1. Состояния конечного автомата блока накопления
 localparam reg [3:0] MESSB_ACC_INITIAL_STATE = 0;
 localparam reg [3:0] MESSB_ACC_RESETED_STATE = 1;
 localparam reg [3:0] MESSB_ACC_DATA_EXCH_STATE = 2;
@@ -69,6 +72,13 @@ localparam reg [1:0] AMPLITUDE_MODE = 1;
 localparam reg [1:0] AUTONOMOUS_MODE = 2;
 localparam reg [MESSB_ACC_ADDRESS_WIDTH-1:0] LAST_ADDRESS = 2**MESSB_ACC_ADDRESS_WIDTH - 1;
 localparam reg [7:0] INERNAL_CHANNEL_COUNT_SWITCH_VALUE = 8'b100;
+// 3. Константы, связанные с работой CAMAC
+localparam reg [3:0] CAMAC_INITIAL_STATE = 0;
+localparam reg [3:0] CAMAC_LINE_IS_BUSY_STATE = 1;
+localparam reg [3:0] CAMAC_S1_STROBE_WAIT_STATE = 2;
+localparam reg [3:0] CAMAC_S1_STROBE_STATE = 3;
+localparam reg [3:0] CAMAC_S2_STROBE_WAIT_STATE = 4;
+localparam reg [3:0] CAMAC_S2_STROBE_STATE = 5;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
 reg [3:0] state;                           // состояние блока накопления. см. диаграмму
@@ -90,13 +100,14 @@ wire acc_event_rst;                        // эффективный сигна�
 wire ampl_mode_channel;                    // канал-импульс в амплитудном режиме
 wire internal_channel;                     // мультиплексируемый канал-импульс
 integer i;                                 // Переменная для цикла for для инициализации спектра
+reg [3:0] camac_cmd_state;
 /*********************************************************************************/
 assign acc_event_rst = rst | channel_data_accumulated;
 // todo(UMV): если используется s1 от КАМАК, то не учитывается вся команда целиком NF(25)A(0-15)
 assign ampl_mode_channel = USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b1 ? generated_channel_counter : camac_s1;
 assign internal_channel = mode == AMPLITUDE_MODE ? ampl_mode_channel : channel;
 /****************** Блок описания поведения работы накопителя ********************/
-// Блок логики смены состояний
+// Блок логики смены состояний накопителя ()
 always @(posedge clk)
 begin
     if (rst == 1'b1)
@@ -242,6 +253,71 @@ begin
              */
                 state <= MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE;
                 address <= 0;
+            end
+        endcase
+    end
+end
+
+/*
+ * Блок ответов на команды/запросы КАМАК (еще не известно как мы будем отвечать на команды, это все под
+ * вопросом),
+ * вероятно необходимо учитывать линии:
+ * B  - занято (busy)
+ * Z  - 
+ * C  -
+ * I  -
+ * S1 -
+ * S2 -
+ *             Диаграммы команды на магистрали КАМАК
+ * B     -----                                        ---------
+ *           |________________________________________|
+ * NAF   -----                                        ---------
+ *           |________________________________________|
+ * XQRW  -----                                        ---------
+ *           |________________________________________|
+ *            ________________________________________
+ * L     ____|                                        |________
+ *       ______________         _______________________________
+ * S1                  |_______|
+ *       ______________________________       _________________
+ * S2                                  |_____|
+ */ 
+always @(posedge clk)
+begin
+    if (rst == 1'b1)
+    begin
+        camac_cmd_state <= CAMAC_INITIAL_STATE;
+        camac_l <= 1'b0;
+    end
+    else
+        begin
+        if (camac_c == 1'b1)
+        begin
+            camac_cmd_state <= CAMAC_INITIAL_STATE;
+        end
+        case (camac_cmd_state)
+            CAMAC_INITIAL_STATE:
+            begin
+                if (camac_b == 1'b0)
+                begin
+                    camac_cmd_state <= CAMAC_LINE_IS_BUSY_STATE;
+                    camac_l <= 1'b0;
+                end
+            end
+            CAMAC_LINE_IS_BUSY_STATE:
+            begin
+                camac_l <= 1'b1;
+                camac_x <= 1'b1;    // вопрос как модуль узнает, что это операция для него, вообще тут должно происходить детектирование N
+                camac_cmd_state <= CAMAC_S1_STROBE_WAIT_STATE;
+            end
+            CAMAC_S1_STROBE_WAIT_STATE:
+            begin
+            end
+            CAMAC_S1_STROBE_STATE:
+            begin
+            end
+            CAMAC_S2_STROBE_STATE:
+            begin
             end
         endcase
     end
