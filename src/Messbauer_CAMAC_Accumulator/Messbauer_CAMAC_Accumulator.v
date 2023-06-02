@@ -22,6 +22,8 @@ module Messbauer_CAMAC_Accumulator #
     CAMAC_DATA_WIDTH = 24,
     // ширина данных линии функция (количество бит)
     CAMAC_FUNC_WIDTH = 5,
+    // число тактов в течение которых переходные процессы будут завершены (по стандарту КАМАК - 0,1 мкс)
+    CAMAC_TRANSITION_CYCLES = 5,
     // число бит адреса накопителя (в SM-2201 число точек в спектре = 2^12 = 4096)
     MESSB_ACC_ADDRESS_WIDTH = 12,
     // использование С1 для генерации переключения следующего канала (если == 0) или внутренний генератор (если == 1)
@@ -44,11 +46,12 @@ module Messbauer_CAMAC_Accumulator #
     input wire camac_b,  // занято (busy)
     input wire camac_s1, // строб S1
     input wire camac_c,  // C - сброс (при С=1 установка регистров в начальное значение)
+    input wire camac_z,  // Z - пуск
     input wire [CAMAC_DATA_WIDTH-1:0] camac_read,  // should be input && rename
     output reg [CAMAC_DATA_WIDTH-1:0] camac_write,
-    output reg camac_x,
-    output reg camac_l,  // L - запрос на об
-    output reg camac_q
+    output reg camac_x,  // X - команда принята
+    output reg camac_l,  // L - запрос на обслуживание
+    output reg camac_q   // Q - ответ (на любую адресную операцию т.е. содержащую N и A)
 );
 
 /******************************* Блок констант ***********************************/
@@ -74,11 +77,13 @@ localparam reg [MESSB_ACC_ADDRESS_WIDTH-1:0] LAST_ADDRESS = 2**MESSB_ACC_ADDRESS
 localparam reg [7:0] INERNAL_CHANNEL_COUNT_SWITCH_VALUE = 8'b100;
 // 3. Константы, связанные с работой CAMAC
 localparam reg [3:0] CAMAC_INITIAL_STATE = 0;
-localparam reg [3:0] CAMAC_LINE_IS_BUSY_STATE = 1;
-localparam reg [3:0] CAMAC_S1_STROBE_WAIT_STATE = 2;
-localparam reg [3:0] CAMAC_S1_STROBE_STATE = 3;
-localparam reg [3:0] CAMAC_S2_STROBE_WAIT_STATE = 4;
-localparam reg [3:0] CAMAC_S2_STROBE_STATE = 5;
+localparam reg [3:0] CAMAC_CMD_CYCLE_STARTED = 1;
+localparam reg [3:0] CAMAC_WAIT_ADDRESED_CMD_DETECTION = 2;
+localparam reg [3:0] CAMAC_S1_STROBE_WAIT_STATE = 3;
+localparam reg [3:0] CAMAC_S1_STROBE_STATE = 4;
+localparam reg [3:0] CAMAC_S2_STROBE_WAIT_STATE = 5;
+localparam reg [3:0] CAMAC_S2_STROBE_STATE = 6;
+localparam reg [3:0] CAMAC_CMD_CYCLE_FINISHED = 7;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
 reg [3:0] state;                           // состояние блока накопления. см. диаграмму
@@ -100,14 +105,16 @@ wire acc_event_rst;                        // эффективный сигна�
 wire ampl_mode_channel;                    // канал-импульс в амплитудном режиме
 wire internal_channel;                     // мультиплексируемый канал-импульс
 integer i;                                 // Переменная для цикла for для инициализации спектра
-reg [3:0] camac_cmd_state;
+reg [3:0] camac_cmd_state;                 // Состояние обработки действий на магистрали
+reg [3:0] camac_transition_counter;        // Счетчик для подсчета тактов для завершения переходных процессов
 /*********************************************************************************/
 assign acc_event_rst = rst | channel_data_accumulated;
 // todo(UMV): если используется s1 от КАМАК, то не учитывается вся команда целиком NF(25)A(0-15)
 assign ampl_mode_channel = USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b1 ? generated_channel_counter : camac_s1;
 assign internal_channel = mode == AMPLITUDE_MODE ? ampl_mode_channel : channel;
 /****************** Блок описания поведения работы накопителя ********************/
-// Блок логики смены состояний накопителя ()
+
+// Блок логики смены состояний накопителя (автономный и амплитудный анализ)
 always @(posedge clk)
 begin
     if (rst == 1'b1)
@@ -288,36 +295,62 @@ begin
     begin
         camac_cmd_state <= CAMAC_INITIAL_STATE;
         camac_l <= 1'b0;
+        camac_transition_counter <= 3'b0;
     end
     else
         begin
-        if (camac_c == 1'b1)
+        if (camac_c == 1'b1 || camac_z == 1'b0)
         begin
             camac_cmd_state <= CAMAC_INITIAL_STATE;
+            camac_transition_counter <= 3'b0;
         end
         case (camac_cmd_state)
             CAMAC_INITIAL_STATE:
             begin
                 if (camac_b == 1'b0)
                 begin
-                    camac_cmd_state <= CAMAC_LINE_IS_BUSY_STATE;
+                    camac_cmd_state <= CAMAC_CMD_CYCLE_STARTED;
                     camac_l <= 1'b0;
                 end
             end
-            CAMAC_LINE_IS_BUSY_STATE:
+            CAMAC_CMD_CYCLE_STARTED:
             begin
                 camac_l <= 1'b1;
-                camac_x <= 1'b1;    // вопрос как модуль узнает, что это операция для него, вообще тут должно происходить детектирование N
-                camac_cmd_state <= CAMAC_S1_STROBE_WAIT_STATE;
+                camac_x <= 1'b1;
+                camac_cmd_state <= CAMAC_WAIT_ADDRESED_CMD_DETECTION;
+                // если команда адресная (т.е. N != 0), то нужно отправить ответ Q, но, возможно требуется ожидание
+                // окончания переходных процессов (по стандату это не более 0,1 мкс)
+                
+            end
+            CAMAC_WAIT_ADDRESED_CMD_DETECTION:
+            begin
+               camac_transition_counter <= camac_transition_counter + 1
+               if (camac_transition_counter == CAMAC_TRANSITION_CYCLES)
+               begin
+                  // определяем адресная команда или безадресная
+               end
             end
             CAMAC_S1_STROBE_WAIT_STATE:
             begin
+               if (camac_s1 == 1'b0)
+                   camac_cmd_state <= CAMAC_S1_STROBE_STATE;
             end
             CAMAC_S1_STROBE_STATE:
             begin
+                camac_cmd_state <= CAMAC_S2_STROBE_WAIT_STATE;
+            end
+            CAMAC_S2_STROBE_WAIT_STATE:
+            begin
+               if (camac_s2 == 1'b0)
+                   camac_cmd_state <= CAMAC_S2_STROBE_STATE;
             end
             CAMAC_S2_STROBE_STATE:
             begin
+                camac_cmd_state <= CAMAC_CMD_CYCLE_FINISHED;
+            end
+            CAMAC_CMD_CYCLE_FINISHED
+            begin
+                camac_x <= 1'b0;
             end
         endcase
     end
