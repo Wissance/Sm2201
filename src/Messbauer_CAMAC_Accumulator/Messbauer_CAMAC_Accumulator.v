@@ -21,8 +21,8 @@ module Messbauer_CAMAC_Accumulator #
 (
     // ширина данных CAMAC
     CAMAC_DATA_WIDTH = 24,
-    // ширина данных линии модуля (количество бит)
-    CAMAC_MODULE_WIDTH = 5,
+    // число линии модулей (станций)
+    CAMAC_MODULE_WIDTH = 24,
     // ширина данных линии субадреса модуля (количество бит)
     CAMAC_ADDR_WIDTH = 4,
     // ширина данных линии функция (количество бит)
@@ -309,7 +309,7 @@ begin
     end
     else
         begin
-        if (camac_c == 1'b1 || camac_z == 1'b0)
+        if (camac_c == 1'b1 || camac_z == 1'b0) // todo(umv): Возможно ПУСК мы будем обрабатывать отдельно ...
         begin
             camac_cmd_state <= CAMAC_INITIAL_STATE;
             camac_transition_counter <= 3'b0;
@@ -317,16 +317,16 @@ begin
         case (camac_cmd_state)
             CAMAC_INITIAL_STATE:
             begin
-                if (camac_b == 1'b0)
+                if (camac_b == ~(1'b0))
                 begin
                     camac_cmd_state <= CAMAC_CMD_CYCLE_STARTED;
-                    camac_l <= 1'b0;
+                    camac_l <= ~(1'b0);
                 end
             end
             CAMAC_CMD_CYCLE_STARTED:
             begin
-                camac_l <= 1'b1;
-                camac_x <= 1'b1;
+                camac_l <= ~(1'b1);
+                camac_x <= ~(1'b1);
                 camac_cmd_state <= CAMAC_WAIT_ADDRESED_CMD_DETECTION;
                 // если команда адресная (т.е. N != 0), то нужно отправить ответ Q, но, возможно требуется ожидание
                 // окончания переходных процессов (по стандату это не более 0,1 мкс)
@@ -338,11 +338,13 @@ begin
                if (camac_transition_counter == CAMAC_TRANSITION_CYCLES)
                begin
                   // определяем адресная команда или безадресная
-                  if (camac_n != 0) // нужно еще соотнести с дефотным уровнем
+                  if (camac_n != ~(24'b111111111111111111111111)) // ??? Как активитуется модуль 0 или 1 ?
                   begin
+                      camac_cmd_state <= CAMAC_S1_STROBE_WAIT_STATE;
                   end
                   else
                   begin
+                      // безадресные команды
                   end
                end
             end
