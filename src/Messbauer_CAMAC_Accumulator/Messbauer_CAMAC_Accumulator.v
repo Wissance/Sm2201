@@ -13,13 +13,18 @@
 // Dependencies:   Без внешних зависимостей
 //
 // Revision:       1.0
-// Additional Comments: 
+// Additional Comments: В КАМАК используется инверсная логика т.е. лог. 1 соотвествует низкий уровень (0 - 0.4В),
+//                      а лог. 0 - высокий уровень (2.0 - 5.5 В)
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Accumulator #
 (
     // ширина данных CAMAC
     CAMAC_DATA_WIDTH = 24,
+    // ширина данных линии модуля (количество бит)
+    CAMAC_MODULE_WIDTH = 5,
+    // ширина данных линии субадреса модуля (количество бит)
+    CAMAC_ADDR_WIDTH = 4,
     // ширина данных линии функция (количество бит)
     CAMAC_FUNC_WIDTH = 5,
     // число тактов в течение которых переходные процессы будут завершены (по стандарту КАМАК - 0,1 мкс)
@@ -41,10 +46,13 @@ module Messbauer_CAMAC_Accumulator #
 
     // CAMAC-сигналы
     // Сигналы управления адресацией
+    input wire [CAMAC_MODULE_WIDTH-1:0] camac_n,
+    input wire [CAMAC_ADDR_WIDTH-1:0] camac_a,
     input wire [CAMAC_FUNC_WIDTH-1:0] camac_f,
-
+    
     input wire camac_b,  // занято (busy)
     input wire camac_s1, // строб S1
+    input wire camac_s2, // строб S2
     input wire camac_c,  // C - сброс (при С=1 установка регистров в начальное значение)
     input wire camac_z,  // Z - пуск
     input wire [CAMAC_DATA_WIDTH-1:0] camac_read,  // should be input && rename
@@ -270,12 +278,13 @@ end
  * вопросом),
  * вероятно необходимо учитывать линии:
  * B  - занято (busy)
- * Z  - 
- * C  -
+ * Z  - пуск
+ * C  - сброс
  * I  -
- * S1 -
- * S2 -
- *             Диаграммы команды на магистрали КАМАК
+ * S1 - строб S1
+ * S2 - строб S2
+ *             Диаграммы команды на магистрали КАМАК 
+ *             1. Адресные команды
  * B     -----                                        ---------
  *           |________________________________________|
  * NAF   -----                                        ---------
@@ -288,13 +297,14 @@ end
  * S1                  |_______|
  *       ______________________________       _________________
  * S2                                  |_____|
+ * В КАМАК лог 0 - 2-5 В, лог. 1 - 0.4 В
  */ 
 always @(posedge clk)
 begin
     if (rst == 1'b1)
     begin
         camac_cmd_state <= CAMAC_INITIAL_STATE;
-        camac_l <= 1'b0;
+        camac_l <= ~(1'b0);
         camac_transition_counter <= 3'b0;
     end
     else
@@ -324,10 +334,16 @@ begin
             end
             CAMAC_WAIT_ADDRESED_CMD_DETECTION:
             begin
-               camac_transition_counter <= camac_transition_counter + 1
+               camac_transition_counter <= camac_transition_counter + 1;
                if (camac_transition_counter == CAMAC_TRANSITION_CYCLES)
                begin
                   // определяем адресная команда или безадресная
+                  if (camac_n != 0) // нужно еще соотнести с дефотным уровнем
+                  begin
+                  end
+                  else
+                  begin
+                  end
                end
             end
             CAMAC_S1_STROBE_WAIT_STATE:
@@ -348,7 +364,7 @@ begin
             begin
                 camac_cmd_state <= CAMAC_CMD_CYCLE_FINISHED;
             end
-            CAMAC_CMD_CYCLE_FINISHED
+            CAMAC_CMD_CYCLE_FINISHED:
             begin
                 camac_x <= 1'b0;
             end
