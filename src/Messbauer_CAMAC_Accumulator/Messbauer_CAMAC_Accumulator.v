@@ -313,10 +313,12 @@ begin
         begin
             camac_cmd_state <= CAMAC_INITIAL_STATE;
             camac_transition_counter <= 3'b0;
+            camac_q <= ~(1'b1);
         end
         case (camac_cmd_state)
             CAMAC_INITIAL_STATE:
             begin
+                camac_q <= ~(1'b1);
                 if (camac_b == ~(1'b0))
                 begin
                     camac_cmd_state <= CAMAC_CMD_CYCLE_STARTED;
@@ -327,6 +329,7 @@ begin
             begin
                 camac_l <= ~(1'b1);
                 camac_x <= ~(1'b1);
+                camac_q <= ~(1'b1);
                 camac_cmd_state <= CAMAC_WAIT_ADDRESED_CMD_DETECTION;
                 // если команда адресная (т.е. N != 0), то нужно отправить ответ Q, но, возможно требуется ожидание
                 // окончания переходных процессов (по стандату это не более 0,1 мкс)
@@ -341,10 +344,13 @@ begin
                   if (camac_n != ~(24'b111111111111111111111111)) // ??? Как активитуется модуль 0 или 1 ?
                   begin
                       camac_cmd_state <= CAMAC_S1_STROBE_WAIT_STATE;
+                      camac_q <= ~(1'b0); // Для накопителя только 1 команда может вернуть либо 0, либо 1 - Проверка состояния 
                   end
                   else
                   begin
-                      // безадресные команды
+                      // безадресные команды, для блока накопления таких нет, пока игнорим эту ветку
+                      // todo(UMV): описать реакцию на такие команды ....
+                      camac_cmd_state <= CAMAC_S2_STROBE_WAIT_STATE;
                   end
                end
             end
@@ -356,6 +362,25 @@ begin
             CAMAC_S1_STROBE_STATE:
             begin
                 camac_cmd_state <= CAMAC_S2_STROBE_WAIT_STATE;
+                // Обрабатываем команды здесь ....
+                case (camac_f)
+                    ~(5'b00000):
+                    begin
+                       // чтение ячейки ОЗУ, ??? где и в каком формате адрес ячейки (camac_read, вероятно)
+                    end
+                    ~(5'b01001):
+                    begin
+                       // сброс буферных счетчиков (вероятно это сделано под амплитудный анализ)
+                    end
+                    ~(5'b01011):
+                    begin
+                       // сброс триггера состояния (вероятно это сделано под амплитудный анализ)
+                    end
+                    default:
+                    begin
+                       // ничего не делаем
+                    end
+                endcase
             end
             CAMAC_S2_STROBE_WAIT_STATE:
             begin
@@ -369,6 +394,8 @@ begin
             CAMAC_CMD_CYCLE_FINISHED:
             begin
                 camac_x <= 1'b0;
+                camac_q <= ~(1'b1);
+                camac_cmd_state <= CAMAC_INITIAL_STATE;
             end
         endcase
     end
