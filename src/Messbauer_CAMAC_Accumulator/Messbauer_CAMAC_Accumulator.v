@@ -94,27 +94,29 @@ localparam reg [3:0] CAMAC_S2_STROBE_STATE = 6;
 localparam reg [3:0] CAMAC_CMD_CYCLE_FINISHED = 7;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
-reg [3:0] state;                           // состояние блока накопления. см. диаграмму
-reg [3:0] delay_counter;                   // счетчик задержек, для перехода между состояниями
-reg [1:0] mode;                            // режим измерения
-reg start_trigger;                         // триггер старт-импульса
-reg [MESSB_ACC_ADDRESS_WIDTH-1:0] address; // адрес текущей точки спектра
-reg current_counter;                       // текущий используемый счетчик
-reg [CAMAC_DATA_WIDTH-1:0] current_value;  // текущее значение
-reg [CAMAC_DATA_WIDTH-1:0] counter1_value; // текущее значение накопленное в счетчике 1
-reg [CAMAC_DATA_WIDTH-1:0] counter2_value; // текущее значение накопленное в счетчике 2
-reg channel_switched;                      // триггер переключения канал-импульса
-reg generated_channel;                     // генерируемы канал-импульс в амплиткдном режиме для случая USE_INTERNAL_AMPL_CHANNEL_SWITCH == 0
-reg [7:0] generated_channel_counter;       // счетчик переключения генерируемого
+reg [3:0] state;                                 // состояние блока накопления. см. диаграмму
+reg [3:0] delay_counter;                         // счетчик задержек, для перехода между состояниями
+reg [1:0] mode;                                  // режим измерения
+reg start_trigger;                               // триггер старт-импульса
+reg [MESSB_ACC_ADDRESS_WIDTH-1:0] address;       // адрес текущей точки спектра
+reg current_counter;                             // текущий используемый счетчик
+reg [CAMAC_DATA_WIDTH-1:0] current_value;        // текущее значение
+reg [CAMAC_DATA_WIDTH-1:0] counter1_value;       // текущее значение накопленное в счетчике 1
+reg [CAMAC_DATA_WIDTH-1:0] counter2_value;       // текущее значение накопленное в счетчике 2
+reg channel_switched;                            // триггер переключения канал-импульса
+reg generated_channel;                           // генерируемы канал-импульс в амплиткдном режиме для случая USE_INTERNAL_AMPL_CHANNEL_SWITCH == 0
+reg [7:0] generated_channel_counter;             // счетчик переключения генерируемого
 // специальный синтаксис 2 ** MESSB_ACC_ADDRESS_WIDTH = 2 в степени
 reg [CAMAC_DATA_WIDTH-1:0] spectrum [2**MESSB_ACC_ADDRESS_WIDTH];
-reg channel_data_accumulated;              // регистр, используемый для 
-wire acc_event_rst;                        // эффективный сигнал сброса триггера канала и очистки счетсчика импульсов
-wire ampl_mode_channel;                    // канал-импульс в амплитудном режиме
-wire internal_channel;                     // мультиплексируемый канал-импульс
-integer i;                                 // Переменная для цикла for для инициализации спектра
-reg [3:0] camac_cmd_state;                 // Состояние обработки действий на магистрали
-reg [3:0] camac_transition_counter;        // Счетчик для подсчета тактов для завершения переходных процессов
+reg channel_data_accumulated;                    // регистр, используемый для 
+wire acc_event_rst;                              // эффективный сигнал сброса триггера канала и очистки счетсчика импульсов
+wire ampl_mode_channel;                          // канал-импульс в амплитудном режиме
+wire internal_channel;                           // мультиплексируемый канал-импульс
+integer i;                                       // Переменная для цикла for для инициализации спектра
+reg [3:0] camac_cmd_state;                       // Состояние обработки действий на магистрали
+reg [3:0] camac_transition_counter;              // Счетчик для подсчета тактов для завершения переходных процессов
+reg [MESSB_ACC_ADDRESS_WIDTH-1:0] acc_mem_addr;  // Регистр адреса накопителя
+reg [CAMAC_DATA_WIDTH-1:0] acc_spec_value;       // Значение точки спектра (как на чтение, так и на запись)
 /*********************************************************************************/
 assign acc_event_rst = rst | channel_data_accumulated;
 // todo(UMV): если используется s1 от КАМАК, то не учитывается вся команда целиком NF(25)A(0-15)
@@ -122,7 +124,7 @@ assign ampl_mode_channel = USE_INTERNAL_AMPL_CHANNEL_SWITCH == 1'b1 ? generated_
 assign internal_channel = mode == AMPLITUDE_MODE ? ampl_mode_channel : channel;
 /****************** Блок описания поведения работы накопителя ********************/
 
-// Блок логики смены состояний накопителя (автономный и амплитудный анализ)
+// Блок логики накопления (автономный и амплитудный анализ)
 always @(posedge clk)
 begin
     if (rst == 1'b1)
@@ -306,6 +308,8 @@ begin
         camac_cmd_state <= CAMAC_INITIAL_STATE;
         camac_l <= ~(1'b0);
         camac_transition_counter <= 3'b0;
+        acc_mem_addr <= 0;
+        acc_spec_value <= 0;
     end
     else
         begin
@@ -366,7 +370,9 @@ begin
                 case (camac_f)
                     ~(5'b00000):
                     begin
-                       // чтение ячейки ОЗУ, ??? где и в каком формате адрес ячейки (camac_read, вероятно)
+                       // чтение ячейки ОЗУ, перед чтением идет установка регистра адреса ...
+                       acc_spec_value <= spectrum[acc_mem_addr];
+                       camac_write <= acc_spec_value;
                     end
                     ~(5'b01001):
                     begin
@@ -375,6 +381,15 @@ begin
                     ~(5'b01011):
                     begin
                        // сброс триггера состояния (вероятно это сделано под амплитудный анализ)
+                    end
+                    ~(5'b10000):
+                    begin
+                       // перезапись ячейки, но откуда брать и адрес и значение числа импульсов ????
+                    end
+                    ~(5'b10001):
+                    begin
+                       // перезапись регистра адреса
+                       acc_mem_addr <= camac_read[MESSB_ACC_ADDRESS_WIDTH-1:0];
                     end
                     default:
                     begin
@@ -423,7 +438,8 @@ begin
 end
 
 // Блок ожидания Старт-импульса
-// -----__----
+// _____    ____
+//      |__|
 always @(start)
 begin
     if (state == MESSB_ACC_ACCUMULATION_CYCLE_STARTED_STATE)
