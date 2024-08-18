@@ -107,7 +107,7 @@ reg channel_switched;                            // триггер перекл�
 reg generated_channel;                           // генерируемы канал-импульс в амплиткдном режиме для случая USE_INTERNAL_AMPL_CHANNEL_SWITCH == 0
 reg [7:0] generated_channel_counter;             // счетчик переключения генерируемого
 // специальный синтаксис 2 ** MESSB_ACC_ADDRESS_WIDTH = 2 в степени
-reg [CAMAC_DATA_WIDTH-1:0] spectrum [0:4096/*2**MESSB_ACC_ADDRESS_WIDTH*/];
+reg [CAMAC_DATA_WIDTH-1:0] spectrum [2**MESSB_ACC_ADDRESS_WIDTH];
 reg channel_data_accumulated;                    // регистр, используемый для 
 wire acc_event_rst;                              // эффективный сигнал сброса триггера канала и очистки счетсчика импульсов
 wire ampl_mode_channel;                          // канал-импульс в амплитудном режиме
