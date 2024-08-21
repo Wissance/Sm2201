@@ -60,3 +60,9 @@ src/Messbauer_CAMAC_Controller/output_files/
 src/Messbauer_CAMAC_Controller/incremental_db/compiled_partitions/
 
 src/Messbauer_CAMAC_Controller/incremental_db/
+
+src/Messbauer_CAMAC_Accumulator/db/
+
+src/Messbauer_CAMAC_Accumulator/incremental_db/
+
+src/Messbauer_CAMAC_Accumulator/output_files/

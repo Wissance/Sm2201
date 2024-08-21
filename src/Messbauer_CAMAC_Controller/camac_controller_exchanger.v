@@ -6,9 +6,9 @@
 // Design Name: 
 // Module Name:    camac_controller_exchanger
 // Project Name:   camac_controller_exchanger
-// Target Devices: Cyclone IV ()
+// Target Devices: Cyclone IV (EP4CE15F23C8N)
 // Tool versions:  Quartus Prime Lite 18.1
-// Description:    Модуль Camac-контроллера, непосредственно управляющий CAMAC-модулями
+// Description:    Camac-контроллера, непосредственно управляющий CAMAC-модулями
 //
 // Dependencies: 
 //
@@ -17,6 +17,10 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
+`define COMMON_OPERATION     0
+`define READ_OPERATION       1
+`define WRITE_OPERATION      2
+
 module camac_controller_exchanger #
 (
     CAMAC_DATA_WIDTH = 24,
@@ -28,27 +32,122 @@ module camac_controller_exchanger #
     // Общие сигналы управления: тактовая частота и чигнал сброса
     input wire clk,
     input wire rst,
-    // todo(UMV): добавить регистры!
+    // Сигналы взаимодействия с внешним модулем
+    input wire cmd,
+    output reg cmd_received,
+    output reg controller_busy,
+    input wire [7:0] camac_module,                   // номер модуля 1-23, от RS-232 получение
+    input wire [7:0] camac_module_function,          // код функции
+    input wire [7:0] camac_module_subaddr,           // субадрес
+    input wire [1:0] camac_opeartion,                // 0 - инициализация/обмлуживание, 1 - чтение, 2 - записб
 
     // CAMAC-сигналы
     // В CAMAC инверсная по отношению к стандарту ТТЛ логика (т.е. лог. 0 CAMAC == лог. 1 ТТЛ)
     // Сигналы управления адресацией модулей (N, F, A)
-    output wire [CAMAC_MODULE_WIDTH-1:0] camac_n,    // выбор модуля
-    output wire [CAMAC_FUNC_WIDTH-1:0] camac_f,      // выбор функции
-    output wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a,  // выбор суб адреса
+    output reg [CAMAC_MODULE_WIDTH-1:0] camac_n,     // выбор модуля
+    output reg [CAMAC_FUNC_WIDTH-1:0] camac_f,       // выбор функции
+    output reg [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a,   // выбор суб адреса
     // Сигналы состояния
     input wire camac_x,                              // сигнал команда принята, модуль -> контроллер на любой NAF
     input wire camac_q,                              // сигнал ответ, модуль -> контроллер на любой NAF
     input wire camac_l,                              // сигнал запрос на обслуживание, модуль -> контроллер
-    output wire camac_b,                             // сигнал занято, контроллер -> магистраль, вырабатывается при любой операции контроллером
+    output reg camac_b,                              // сигнал занято, контроллер -> магистраль, вырабатывается при любой операции контроллером
     // Сигналы управления
     output wire camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
     output wire camac_c,                             // сигнал сброс, контроллер -> магистраль
     output wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
     output wire camac_s1,                            // сигнал строб S1, контроллер -> магистраль
-    output wire camac_s12,                           // сигнал строб S2, контроллер -> магистраль
+    output wire camac_s2,                            // сигнал строб S2, контроллер -> магистраль
     output wire camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
     input wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
     output wire [CAMAC_DATA_WIDTH-1:0] camac_w
 );
+
+localparam reg [3:0] INITIAL_STATE = 4'b0000;
+localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
+localparam reg [3:0] SET_CAMAC_BUSY_STATE = 4'b0010;
+localparam reg [3:0] S1_STROBE_BEGIN_STATE = 4'b0011;
+localparam reg [3:0] S1_STROBE_END_STATE = 4'b0100;
+localparam reg [3:0] S2_STROBE_BEGIN_STATE = 4'b0101;
+localparam reg [3:0] S2_STROBE_END_STATE = 4'b0110;
+localparam reg [3:0] FIN_CMD_STATE = 4'b0111;
+
+reg [3:0] camac_state;
+
+always @(posedge clk)
+begin
+    if (rst == 1'b1)
+    begin
+        cmd_received <= 1'b0;
+        controller_busy <= 1'b0;
+        camac_state <= INITIAL_STATE;
+        camac_b <= 1'b1;
+    end
+    else
+    begin
+        case (camac_state)
+            INITIAL_STATE:
+            begin
+                camac_state <= AWAIT_CMD_STATE;
+            end
+            AWAIT_CMD_STATE:
+            begin
+                camac_state <= SET_CAMAC_BUSY_STATE;
+                cmd_received <= 1'b1;
+                controller_busy <= 1'b1;
+            end
+            SET_CAMAC_BUSY_STATE:
+            begin
+                
+                camac_b <= 1'b0;
+                if (camac_module == 0)
+                begin
+                    // безадресаня команда
+                    camac_state <= S2_STROBE_BEGIN_STATE;
+                end
+                else
+                begin
+                    // здесь адресуется модуль NAF
+                    camac_n <= camac_module;
+                    camac_f <= camac_module_function;
+                    camac_a <= camac_module_subaddr;
+                    if (camac_opeartion == `READ_OPERATION)
+                    begin
+                    end
+                    else
+                    begin
+                        if (camac_opeartion == `WRITE_OPERATION)
+                        begin
+                        end
+                    end
+                    camac_state <= S1_STROBE_BEGIN_STATE;
+                end
+            end
+            S1_STROBE_BEGIN_STATE:
+            begin
+                camac_state <= S1_STROBE_END_STATE;
+            end
+            S1_STROBE_END_STATE:
+            begin
+                camac_state <= S2_STROBE_BEGIN_STATE;
+            end
+            S2_STROBE_BEGIN_STATE:
+            begin
+                camac_state <= S2_STROBE_END_STATE;
+            end
+            S2_STROBE_END_STATE:
+            begin
+                camac_state <= FIN_CMD_STATE;
+                cmd_received <= 1'b0;
+            end
+            FIN_CMD_STATE:
+            begin
+                camac_state <= INITIAL_STATE;
+                controller_busy <= 1'b0;
+            end
+        endcase
+    end
+end
+
+endmodule
