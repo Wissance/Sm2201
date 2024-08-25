@@ -30,9 +30,9 @@ module Messbauer_CAMAC_Controller #
     input wire clk,
     input wire rst,
     // RS232-сигналы
-    input wire rs232_rx,                             // сигнал RX чтение данных PC -> устройство (контроллер крейта)
+    input  wire rs232_rx,                            // сигнал RX чтение данных PC -> устройство (контроллер крейта)
     output wire rs232_tx,                            // сигнал TX чтение данных PC <- устройство (контроллер крейта)
-    input wire rs232_cts,                             // сигнал Clear-to-send, PC выставляет когда готов принять данные
+    input  wire rs232_cts,                           // сигнал Clear-to-send, PC выставляет когда готов принять данные
     output wire rs232_rts,                           // сигнал Ready-to-send, устройство выставляет когда готово отправить данные
     // Сигналы управления адресацией модулей (N, F, A)
     output wire [CAMAC_MODULE_WIDTH-1:0] camac_n,    // выбор модуля

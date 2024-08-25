@@ -17,9 +17,10 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define COMMON_OPERATION     0
-`define READ_OPERATION       1
-`define WRITE_OPERATION      2
+`define COMMON_OPERATION         0
+`define READ_OPERATION           1
+`define WRITE_OPERATION          2
+`define CHECK_LAM_OPERATION      3
 
 module camac_controller_exchanger #
 (
@@ -58,31 +59,43 @@ module camac_controller_exchanger #
     input wire camac_l,                              // сигнал запрос на обслуживание, модуль -> контроллер
     output reg camac_b,                              // сигнал занято, контроллер -> магистраль, вырабатывается при любой операции контроллером
     // Сигналы управления
-    output wire camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
-    output wire camac_c,                             // сигнал сброс, контроллер -> магистраль
-    output wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
+    output reg  camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
+    output reg  camac_c,                             // сигнал сброс, контроллер -> магистраль
+    inout  wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
     output reg  camac_s1,                            // сигнал строб S1, контроллер -> магистраль
     output reg  camac_s2,                            // сигнал строб S2, контроллер -> магистраль
-    output wire camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
+    output reg  camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
     input wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
     output reg [CAMAC_DATA_WIDTH-1:0] camac_w
 );
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
-localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
-localparam reg [3:0] SET_CAMAC_BUSY_STATE = 4'b0010;
-localparam reg [3:0] DELAY_BEFORE_S1_STATE = 4'b0011;
-localparam reg [3:0] S1_STROBE_BEGIN_STATE = 4'b0100;
-localparam reg [3:0] S1_STROBE_END_STATE = 4'b0101;
-localparam reg [3:0] S2_STROBE_BEGIN_STATE = 4'b0110;
-localparam reg [3:0] S2_STROBE_END_STATE = 4'b0111;
-localparam reg [3:0] FIN_CMD_STATE = 4'b1000;
+localparam reg [3:0] BEGIN_INIT_STATE = 4'b0001;
+localparam reg [3:0] INIT_S2_STROBE_BEGIN_STATE = 4'b0010;
+localparam reg [3:0] INIT_S2_STROBE_END_STATE = 4'b0011;
+localparam reg [3:0] END_INIT_STATE = 4'b0100;
+
+localparam reg [3:0] AWAIT_CMD_STATE = 4'b0101;
+localparam reg [3:0] SET_CAMAC_BUSY_STATE = 4'b0110;
+localparam reg [3:0] DELAY_BEFORE_S1_STATE = 4'b0111;
+localparam reg [3:0] S1_STROBE_BEGIN_STATE = 4'b1000;
+localparam reg [3:0] S1_STROBE_END_STATE = 4'b1001;
+localparam reg [3:0] S1_TO_S2_STROBE_DELAY_STATE = 4'b1010;
+localparam reg [3:0] S2_STROBE_BEGIN_STATE = 4'b1011;
+localparam reg [3:0] S2_STROBE_END_STATE = 4'b1100;
+localparam reg [3:0] FREE_CAMAC_BUSY_STATE = 4'b1101;
+localparam reg [3:0] FIN_CMD_STATE = 4'b1110;
 
 localparam reg [7:0] CAMAC_BUSY_DELAY = 15;
+localparam reg [7:0] CAMAC_S1_MIN_LEN = 10;
+localparam reg [7:0] CAMAC_S1_TO_S2_DELAY = 5;
+localparam reg [7:0] CAMAC_S2_MIN_LEN = 15;
+
 
 reg [3:0] camac_state;
 reg [7:0] counter;
+reg camac_i_w; // ?
 
 always @(posedge clk)
 begin
@@ -99,13 +112,14 @@ begin
         camac_r0 <= 8'h00;
         camac_r1 <= 8'h00;
         camac_r2 <= 8'h00;
+        // todo(UMV): добавить состояние установки Z (сброс)
     end
     else
     begin
         case (camac_state)
             INITIAL_STATE:
             begin
-                camac_state <= AWAIT_CMD_STATE;
+                camac_state <= BEGIN_INIT_STATE;
                 counter <= 8'h00;
                 camac_r0 <= 8'h00;
                 camac_r1 <= 8'h00;
@@ -113,9 +127,27 @@ begin
                 
                 camac_s1 <= 1'b0;
                 camac_s2 <= 1'b0;
+                camac_b <= 1'b1;
+            end
+            BEGIN_INIT_STATE:
+            begin
+                camac_state <= INIT_S2_STROBE_BEGIN_STATE;
+            end
+            INIT_S2_STROBE_BEGIN_STATE:
+            begin
+                camac_state <= INIT_S2_STROBE_END_STATE;
+            end
+            INIT_S2_STROBE_END_STATE:
+            begin
+                camac_state <= END_INIT_STATE;
+            end
+            END_INIT_STATE:
+            begin
+                camac_state <= AWAIT_CMD_STATE;
             end
             AWAIT_CMD_STATE:
             begin
+                // todo(UMV): добавить детектирование команды
                 camac_state <= SET_CAMAC_BUSY_STATE;
                 cmd_received <= 1'b1;
                 controller_busy <= 1'b1;
@@ -126,6 +158,7 @@ begin
 
                 camac_s1 <= 1'b0;
                 camac_s2 <= 1'b0;
+                //camac_b <= 1'b1;
             end
             SET_CAMAC_BUSY_STATE:
             begin
@@ -164,9 +197,9 @@ begin
             S1_STROBE_BEGIN_STATE:
             begin
                 // запись и чтение осуществялется по строб сигналу S1
-                // нужно проверять camac_x
-                if (camac_x == 1'b1)
-                begin
+                counter <= counter + 1;
+                //if (camac_x == 1'b1)
+                //begin
                     if (camac_opeartion == `READ_OPERATION)
                     begin
                         camac_r0 <= camac_r[7:0];
@@ -174,11 +207,28 @@ begin
                         camac_r2 <= camac_r[23:16];
                     end
                     camac_state <= S1_STROBE_END_STATE;
-                end
+                //end
+                // todo umv: 
             end
             S1_STROBE_END_STATE:
             begin
-                camac_state <= S2_STROBE_BEGIN_STATE;
+                counter <= counter + 1;
+                if (counter > CAMAC_S1_MIN_LEN)
+                begin 
+                    camac_state <= S1_TO_S2_STROBE_DELAY_STATE;
+                    camac_s1 <= 1'b0;
+                    counter <= 0;
+                end
+            end
+            S1_TO_S2_STROBE_DELAY_STATE:
+            begin
+                counter <= counter + 1;
+                if (counter > CAMAC_S1_TO_S2_DELAY)
+                begin 
+                    camac_state <= S2_STROBE_BEGIN_STATE;
+                    camac_s2 <= 1'b1;
+                    counter <= 0;
+                end
             end
             S2_STROBE_BEGIN_STATE:
             begin
@@ -186,12 +236,28 @@ begin
             end
             S2_STROBE_END_STATE:
             begin
-                camac_state <= FIN_CMD_STATE;
-                cmd_received <= 1'b0;
+                counter <= counter + 1;
+                if (counter > CAMAC_S2_MIN_LEN)
+                begin 
+                    camac_s2 <= 1'b0;
+                    counter <= 0;
+                    camac_state <= FREE_CAMAC_BUSY_STATE;
+                end
+            end
+            FREE_CAMAC_BUSY_STATE:
+            begin
+                counter <= counter + 1;
+                if (counter > CAMAC_S2_MIN_LEN)
+                begin 
+                    counter <= 0;
+                    camac_state <= FIN_CMD_STATE;
+                    cmd_received <= 1'b0;
+                    camac_b <= 1'b1;
+                end
             end
             FIN_CMD_STATE:
             begin
-                camac_state <= INITIAL_STATE;
+                camac_state <= AWAIT_CMD_STATE;
                 controller_busy <= 1'b0;
             end
         endcase
