@@ -178,18 +178,20 @@ begin
             end
             AWAIT_CMD_STATE:
             begin
-                // todo(UMV): добавить детектирование команды
-                camac_state <= SET_CAMAC_BUSY_STATE;
-                cmd_received <= 1'b1;
-                controller_busy <= 1'b1;
+                if (cmd == 1'b1)
+                begin
+                    camac_state <= SET_CAMAC_BUSY_STATE;
+                    cmd_received <= 1'b1;
+                    controller_busy <= 1'b1;
+                end
                 counter <= 8'h00;
                 camac_r0 <= 8'h00;
                 camac_r1 <= 8'h00;
                 camac_r2 <= 8'h00;
 
-                camac_s1 <= 1'b0;
-                camac_s2 <= 1'b0;
-                //camac_b <= 1'b1;
+                camac_s1 <= 1'b1;
+                camac_s2 <= 1'b1;
+                camac_b <= 1'b1;
             end
             SET_CAMAC_BUSY_STATE:
             begin
@@ -288,8 +290,11 @@ begin
             end
             FIN_CMD_STATE:
             begin
-                camac_state <= AWAIT_CMD_STATE;
-                controller_busy <= 1'b0;
+                if (cmd == 1'b0)
+                begin
+                    camac_state <= AWAIT_CMD_STATE;
+                    controller_busy <= 1'b0;
+                end
             end
         endcase
     end
