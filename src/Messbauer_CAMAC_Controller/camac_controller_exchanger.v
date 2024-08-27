@@ -91,11 +91,16 @@ localparam reg [7:0] CAMAC_BUSY_DELAY = 15;
 localparam reg [7:0] CAMAC_S1_MIN_LEN = 10;
 localparam reg [7:0] CAMAC_S1_TO_S2_DELAY = 5;
 localparam reg [7:0] CAMAC_S2_MIN_LEN = 15;
-
+localparam reg [7:0] CAMAC_Z_TO_S2_STROBE_DELAY = 23;
+localparam reg [7:0] CAMAC_S2_INIT_LEN = 10;
+localparam reg [7:0] CAMAC_AFTER_S2_DELAY = 5;
 
 reg [3:0] camac_state;
 reg [7:0] counter;
-reg camac_i_w; // ?
+reg  camac_i_w;
+wire camac_i_r;
+
+assign camac_i = ~camac_z & ~camac_s2 ? camac_i_r : camac_i_w;
 
 always @(posedge clk)
 begin
@@ -105,14 +110,15 @@ begin
         controller_busy <= 1'b0;
         camac_state <= INITIAL_STATE;
         camac_b <= 1'b1;
-        camac_s1 <= 1'b0;
-        camac_s2 <= 1'b0;
+        camac_s1 <= 1'b1;
+        camac_s2 <= 1'b1;
 
         counter <= 8'h00;
         camac_r0 <= 8'h00;
         camac_r1 <= 8'h00;
         camac_r2 <= 8'h00;
-        // todo(UMV): добавить состояние установки Z (сброс)
+        camac_z <= 1'b1;
+        camac_i_w <= 1'b1;
     end
     else
     begin
@@ -125,24 +131,49 @@ begin
                 camac_r1 <= 8'h00;
                 camac_r2 <= 8'h00;
                 
-                camac_s1 <= 1'b0;
-                camac_s2 <= 1'b0;
+                camac_s1 <= 1'b1;
+                camac_s2 <= 1'b1;
                 camac_b <= 1'b1;
+                camac_z <= 1'b1;
+                camac_i_w <= 1'b1;
             end
             BEGIN_INIT_STATE:
             begin
-                camac_state <= INIT_S2_STROBE_BEGIN_STATE;
+                camac_b <= 1'b0;
+                camac_z <= 1'b0;
+                camac_i_w <= 1'b0;
+                counter <= counter + 1;
+                if (counter == CAMAC_Z_TO_S2_STROBE_DELAY)
+                begin
+                    counter <= 0;
+                    camac_state <= INIT_S2_STROBE_BEGIN_STATE;
+                end
             end
             INIT_S2_STROBE_BEGIN_STATE:
             begin
-                camac_state <= INIT_S2_STROBE_END_STATE;
+                camac_s2 <= 1'b0;
+                counter <= counter + 1;
+                if (counter == CAMAC_S2_INIT_LEN)
+                begin
+                    counter <= 0;
+                    camac_state <= INIT_S2_STROBE_END_STATE;
+                end
             end
             INIT_S2_STROBE_END_STATE:
             begin
-                camac_state <= END_INIT_STATE;
+                camac_s2 <= 1'b1;
+                counter <= counter + 1;
+                if (counter == CAMAC_AFTER_S2_DELAY)
+                begin
+                    counter <= 0;
+                    camac_state <= END_INIT_STATE;
+                end
             end
             END_INIT_STATE:
             begin
+                camac_b <= 1'b1;
+                camac_z <= 1'b1;
+                camac_i_w <= 1'b1;
                 camac_state <= AWAIT_CMD_STATE;
             end
             AWAIT_CMD_STATE:
