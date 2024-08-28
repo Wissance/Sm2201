@@ -199,7 +199,8 @@ begin
                 camac_b <= 1'b0;
                 if (camac_module == 0)
                 begin
-                    // безадресаня команда
+                    // безадресаня команда (может быть сброс)
+                    // todo(UMV): в следующей версии
                     camac_state <= S2_STROBE_BEGIN_STATE;
                 end
                 else
