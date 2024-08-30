@@ -6,16 +6,20 @@
 // Design Name: 
 // Module Name:    Messbauer_CAMAC_Controller
 // Project Name:   Messbauer_CAMAC_Controller
-// Target Devices: Cyclone IV ()
+// Target Devices: Cyclone IV (EP4CE15F23C8N)
 // Tool versions:  Quartus Prime Lite 18.1
 // Description:    Новый Camac-контроллер с RS-232 интерфейсом управления
 //
-// Dependencies: 
-//
-// Revision: 
-// Revision 1.0
+// Dependencies:   1. quick_rs232 (модуль последовательного порта - https://github.com/Wissance/QuickRS232)
+//                 2. fifo (модуль буфера First In First Out - https://github.com/Wissance/QuickRS232)
+//                 3. serial_cmd_decoder (декодер команд, пример - https://github.com/Wissance/QmtechCycloneIVBoardDemos/blob/master/SerialPortWithCmdProcessor/serial_cmd_decoder.v)
+//                 4. camac_controller_exchanger (модуль управления циклом CAMAC)
+// Revision:       1.0
 // Additional Comments: В CAMAC инверсная по отношению к стандарту ТТЛ логика 
 //                      (т.е. лог. 0 CAMAC == лог. 1 ТТЛ)
+// Command & Control: 
+//
+//
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
@@ -39,9 +43,9 @@ module Messbauer_CAMAC_Controller #
     output wire [CAMAC_FUNC_WIDTH-1:0] camac_f,      // выбор функции
     output wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a,  // выбор суб адреса
     // Сигналы состояния
-    input wire camac_x,                              // сигнал команда принята, модуль -> контроллер на любой NAF
-    input wire camac_q,                              // сигнал ответ, модуль -> контроллер на любой NAF
-    input wire camac_l,                              // сигнал запрос на обслуживание, модуль -> контроллер
+    input  wire camac_x,                             // сигнал команда принята, модуль -> контроллер на любой NAF
+    input  wire camac_q,                             // сигнал ответ, модуль -> контроллер на любой NAF
+    input  wire camac_l,                             // сигнал запрос на обслуживание, модуль -> контроллер
     output wire camac_b,                             // сигнал занято, контроллер -> магистраль, вырабатывается при любой операции контроллером
     // Сигналы управления
     output wire camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
@@ -51,7 +55,7 @@ module Messbauer_CAMAC_Controller #
     output wire camac_s12,                           // сигнал строб S2, контроллер -> магистраль
     output wire camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
-    input wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
+    input  wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
     output wire [CAMAC_DATA_WIDTH-1:0] camac_w
 );
 
