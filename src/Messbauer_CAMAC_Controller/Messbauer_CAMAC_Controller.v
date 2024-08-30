@@ -17,9 +17,26 @@
 // Revision:       1.0
 // Additional Comments: В CAMAC инверсная по отношению к стандарту ТТЛ логика 
 //                      (т.е. лог. 0 CAMAC == лог. 1 ТТЛ)
-// Command & Control: 
-//
-//
+// Command & Control: Для управления будет использован формат команд из демо проекта 
+//                    SerialPortWithCmdProcessor в репо QmtechCycloneIVBoardDemos
+//                    Общий формат команды к контроллеру:
+//                      |   SOF   |Space|PayLoad Len| Type (1b) |  N (1 byte) |    A (1 byte)   |  F (1 byte)  | Data (3bytes)|    EOF   |
+//                       0xFF 0xFF  0x00     {L}     {Cmd Type}  {N - module}  {A - sub address} {F - function}  {Camac Data}   0xEE 0xEE
+//                    Для управления CAMAC-модулями существует несколько значений типа команды (Cmd Type):
+//                    1. Запись в модуль CmdType = 1
+//                       Пример команды записи в модуль 7 по адресу 11 с функцией 4 и данных на CAMAC-шине 0xD01123:
+//                         0xFF 0xFF 0x00 0x08 0x01 0x07 0x0B 0x04 0x23 0x11 0xD0 0xEE 0xEE
+//                       В ответ приходит подтверждение о том, что команда принята:
+//                         |  SOF   |Space|Len|Accepted|   EOF   |
+//                          0xFF 0xFF 0x00 0x01  0x01   0xEE 0xEE
+//                    2. Чтение из модуля CmdType = 2, например, из модуля 20, по адресу 14 с функцией 9:
+//                         0xFF 0xFF 0x00 0x04 0x02 0x14 0x0E 0x09 0xEE 0xEE
+//                       В ответ придет:
+//                         0xFF 0xFF 0x00 0x03 0x11 0x22 0x33 0xEE 0xEE где 0x332211 - данные из модуля
+//                    3. Проверка наличия запросов на обслуживание CmdType=3, безадресная команда: 0xFF 0xFF 0x00 0x01 0x03 0xFF
+//                       В ответ придет 3 байта состояния линий L, например, 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 :
+//                         0xFF 0xFF 0x00 0x03 0x01 0x04 0x04 0xEE 0xEE
+//                    4. Любые другие команды отклоняются 0xFF 0xFF 0x00 0x01 0x02 0xEE 0xEE
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
