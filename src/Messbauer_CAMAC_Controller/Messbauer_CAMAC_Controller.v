@@ -77,15 +77,113 @@ module Messbauer_CAMAC_Controller #
 );
 
 /******************************* Блок констант ***********************************/
-// 1. Состояния конечного автомата
-localparam reg [3:0] MESSB_CAMAC_CONTR_INITIAL_STATE = 0;
-localparam reg [3:0] MESSB_CAMAC_CONTR_RESETED_STATE = 1;
-// 2. Констаны, определяющие связь постоянных значений с функциями
+localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
+localparam reg [4:0] RST_DELAY_CYCLES = 20;
+
+localparam reg [1:0]  BLINK_EVENT_AWAIT = 0;
+localparam reg [1:0]  BLINK_ZERO_STATE = 1;
+localparam reg [1:0]  BLINK_ONE_STATE = 2;
+localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
+
+localparam reg [3:0] INITIAL_STATE = 4'b0000;
+localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
+localparam reg [3:0] CMD_DECODE_STATE = 4'b0010;
+localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
+localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
+localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
+localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0110;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
+localparam reg [3:0] CLEANUP_STATE = 4'b1000;
+
+localparam reg [3:0]  MIN_CMD_LENGTH = 8;
+localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
+localparam reg [7:0]  SET_REG_CMD = 1;
+localparam reg [7:0]  GET_REG_CMD = 2;
 
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
+// 1. Набор регистров сброса
+reg  rst = 1'b0;
+reg  rst_generated = 1'b0;
+reg  [7:0] rst_counter;
+// 2. Набор регистров и проводников для чтения из RS232 (Rx)
+reg  rx_read;
+wire rx_err;
+wire [7:0] rx_data;
+wire rx_byte_received;
+wire has_rx_data;
+wire fifo_encoder_read;
+wire fifo_read;
+// 3. Набор регистров и проводников для записи в RS232 (Tx)
+reg  tx_transaction;
+reg  [7:0] tx_data;
+reg  tx_data_ready;
+wire tx_data_copied;
+wire tx_busy;
+// 4. Набор регистров статуса обмена по RS233 (мигание светодиодами по Tx и Rx)
+reg  [7:0] data_buffer;
+reg  [3:0] serial_data_exchange_state;
+reg  [7:0] delay_counter;
+reg  tx_blink;
+reg  [1:0]  tx_blink_state;
+reg  [31:0] tx_blink_counter;
+reg  rx_blink;
+reg  [1:0]  rx_blink_state;
+reg  [31:0] rx_blink_counter;
+// 5. Дополнительный набор регистров-состояний обмена и полученных данных
+reg  rx_data_ready_trig;
+reg  [7:0] received_bytes_counter;
+reg  [3:0] device_state;
+reg  [15:0] cmd_receive_timeout;
+reg  [7:0] cmd_bytes_counter;
+reg  [7:0] rx_read_counter;
+reg  [7:0] rx_cmd_bytes_analyzed;
+// 6. Набор регистров командной обработки данных по RS232
+wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
+reg  [7:0] cmd_response [0: 14];
+reg  [3:0] cmd_response_bytes;
+reg  [3:0] cmd_tx_bytes_counter;
+reg  [3:0] cmd_finalize_counter;
+reg cmd_next_byte_protect;
+reg cmd_ready;
+reg cmd_response_required;
+reg cmd_processed_received;
+wire cmd_decode_finished;
+wire cmd_decode_success;
+reg [31:0] memory [0:7];
+integer c;
+// 6.1 Регистры декодирования команд
+wire bad_sof;
+wire no_space;
+wire bad_payload;
+wire bad_eof;
+wire [7:0] current_byte;
+wire [7:0] bytes_processed;
+
+assign fifo_read = fifo_encoder_read | rx_read;
 /*********************************************************************************/
-/****************** Блок описания поведения работы накопителя ********************/
+// this always implements the global reset that board generates at start
+always @(posedge clk)
+begin
+    if (rst_generated != 1'b1)
+    begin
+        if (rst != 1'b1)
+        begin
+            rst <= 1'b1;
+            rst_counter <= 0;
+        end
+        else
+        begin
+            rst_counter <= rst_counter + 1;
+            if (rst_counter == RST_DELAY_CYCLES)
+            begin
+                rst <= 1'b0;
+                rst_generated <= 1'b1;
+            end
+        end
+    end
+end
+/************** Блок описания поведения работы CAMAC-контроллера *****************/
 always @(posedge clk)
 begin
     if (rst == 1'b1)
