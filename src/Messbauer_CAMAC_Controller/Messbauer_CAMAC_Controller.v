@@ -224,14 +224,349 @@ begin
         end
     end
 end
+
+// this always implements LED lighting on Rx (Receive) -  D5 diode
+always @(posedge clk)
+begin
+    if (rst)
+    begin
+        rx_blink_state <= BLINK_EVENT_AWAIT;
+        rx_blink_counter <= 0;
+        rx_blink <= 0;
+    end
+    else
+    begin
+        case (rx_blink_state)
+        BLINK_EVENT_AWAIT:
+        begin
+            if (rx_byte_received)
+            begin
+                rx_blink_counter <= 0;
+                rx_blink_state <= BLINK_ONE_STATE;
+                rx_blink <= 0;
+            end
+        end
+        BLINK_ONE_STATE:
+        begin
+            rx_blink_counter <= rx_blink_counter + 1;
+            rx_blink <= 1;
+            if (rx_blink_counter == LED_DELAY_COUNTER)
+            begin
+                rx_blink_counter <= 0;
+                rx_blink_state <= BLINK_ZERO_STATE;
+            end
+        end
+        BLINK_ZERO_STATE:
+        begin
+            rx_blink_counter <= rx_blink_counter + 1;
+            rx_blink <= 0;
+            if (rx_blink_counter == LED_DELAY_COUNTER)
+            begin
+                rx_blink_counter <= 0;
+                rx_blink_state <= BLINK_EVENT_AWAIT;
+            end
+        end
+        endcase
+    end
+end
+
+// received and non send bytes counter
+always @(posedge rst or negedge rx_byte_received or posedge fifo_read)
+begin
+    if (rst == 1'b1)
+    begin
+        rx_data_ready_trig <= 1'b0;
+        received_bytes_counter <= 0;
+    end
+    else
+    begin
+        if (fifo_read == 1'b1)
+        begin
+            rx_data_ready_trig <= 1'b0;
+            if (received_bytes_counter > 0)
+            begin
+                received_bytes_counter <= received_bytes_counter - 1;
+            end
+        end
+        else
+        begin
+            if (rx_byte_received == 1'b0) 
+            begin
+                rx_data_ready_trig <= 1'b1;
+                received_bytes_counter <= received_bytes_counter + 1;
+            end
+        end
+    end
+end
 /************** Блок описания поведения работы CAMAC-контроллера *****************/
+// main cycle -> accumulate rx bytes -> process -> handle cmd -> send response
+// main issue here how to control that number of received bytes grew
 always @(posedge clk)
 begin
     if (rst == 1'b1)
     begin
+        // state regs
+        device_state <= INITIAL_STATE;
+        cmd_receive_timeout <= 0;
+        // rs232 rx regs
+        rx_read <= 1'b0;
+        rx_read_counter <= 0;
+        rx_cmd_bytes_analyzed <= 0;
+        // rs232 tx regs
+        tx_transaction <= 1'b0;
+        tx_data_ready <= 1'b0;
+        tx_data <= 8'h00;
+        // cmd && memory regs
+        cmd_response_required <= 1'b0;
+        cmd_processed_received <= 1'b0;
+        cmd_finalize_counter <= 0;
+        cmd_bytes_counter <= 0;
+        // TODO(UMV): make 8 const -> REG_MEMORY_DEPTH
+        for (c = 0; c < 8; c = c + 1)
+            memory[c] <= 32'h00000000;
+        for (c = 0; c < 15; c = c + 1)
+            cmd_response[c] <= 8'h00;
+        cmd_response_bytes <= 0;
+        cmd_tx_bytes_counter <= 0;
+        cmd_next_byte_protect <= 0;
+
+        led_bus <= 8'b11111111;
     end
     else
     begin
+        case (device_state)
+        INITIAL_STATE:
+        begin
+            // impl regs clear before new command
+            if (cmd_bytes_counter > 0)
+            begin
+                // 1. Clear cmd_receive_timeout not received_bytes_counter
+                cmd_receive_timeout <= cmd_receive_timeout + 1;
+                if (cmd_receive_timeout == 16)
+                begin
+                    rx_read <= 1'b1;
+                end
+                if (cmd_receive_timeout == 32)
+                begin
+                    rx_read <= 1'b0;
+                    cmd_bytes_counter <= cmd_bytes_counter - 1;
+                    cmd_receive_timeout <= 0;
+                end
+            end
+            else
+            begin
+                device_state <= AWAIT_CMD_STATE;
+                cmd_receive_timeout <= 0;
+                cmd_bytes_counter <= 0;
+                rx_read <= 1'b0;
+                rx_read_counter <= 0;
+                rx_cmd_bytes_analyzed <= 0;
+                tx_transaction <= 1'b0;
+                cmd_ready <= 1'b0;
+                cmd_response_required <= 1'b0;
+                cmd_processed_received <= 1'b0;
+                cmd_response_bytes <= 0;
+                cmd_tx_bytes_counter <= 0;
+                cmd_finalize_counter <= 0;
+            end
+        end
+        AWAIT_CMD_STATE:
+        begin
+            cmd_receive_timeout <= cmd_receive_timeout + 1;
+            // check receive, accumulate ...
+            if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)  // 
+            begin
+                // received_bytes_counter is a counter of received bytes in separate always block
+                if (received_bytes_counter == cmd_bytes_counter && cmd_bytes_counter > 0)
+                begin
+                    // 1. pause after BATCH, if we have enough bytes - analyze
+                    if (cmd_bytes_counter >= MIN_CMD_LENGTH)
+                    begin
+                        device_state <= CMD_DECODE_STATE;
+                        rx_read_counter <= 0;
+                        rx_cmd_bytes_analyzed <= 0;
+                        cmd_processed_received <= 1'b0;
+                        cmd_receive_timeout <= 0;
+                        cmd_ready <= 1'b1;
+                        // led_bus[0] <= 0; // 0 mean led is lighting
+                    end
+                    else
+                    begin
+                        // 2. not enough data for CMD
+                        device_state <= INITIAL_STATE;
+                        rx_read <= 1'b0;
+                        cmd_receive_timeout <= 0;
+                    end
+                end
+                else
+                begin
+                    cmd_receive_timeout <= 0;
+                    cmd_bytes_counter <= received_bytes_counter;
+                end
+            end
+            cmd_ready <= 1'b0;
+            cmd_response_required <= 1'b0;
+            cmd_processed_received <= 1'b0;
+            cmd_finalize_counter <= 0;
+        end
+        CMD_DECODE_STATE:
+        begin
+            cmd_ready <= 1'b1;
+            if (cmd_decode_finished == 1'b1)
+            begin
+                device_state <= CMD_CHECK_STATE;
+                // display reasons of decode fail
+                led_bus[0] <= !bad_sof;
+                led_bus[1] <= !no_space;
+                led_bus[2] <= !bad_payload;
+                led_bus[3] <= !bad_eof;
+                // led_bus <= ~ current_byte;
+                // led_bus <= ~ bytes_processed;
+                // led_bus <= received_bytes_counter;
+            end
+        end
+        CMD_CHECK_STATE:
+        begin
+            // cmd_ready <= 1'b0;
+            cmd_finalize_counter <= 0;
+
+            if (cmd_decode_success == 1'b1)
+            begin
+                device_state <= CMD_DETECTED_STATE;
+                cmd_response_required <= 1'b1;
+                // cmd decoded successfully
+                led_bus[4] <= 0;
+            end
+            else
+            begin
+                device_state <= CMD_FINALIZE_STATE;
+                //cmd_processed_received <= 1'b1; // ??
+                cmd_response_required <= 1'b0;
+                // cmd decode failed
+                led_bus[4] <= 1;
+            end
+        end
+        CMD_DETECTED_STATE:
+        begin
+            device_state <= CMD_EXECUTE_STATE;
+        end
+        CMD_EXECUTE_STATE:
+        begin
+            // execute cmd: get or set register
+            device_state <= CMD_FINALIZE_STATE;
+            cmd_tx_bytes_counter <= 0;
+            cmd_next_byte_protect <= 0;
+            if (r0 == SET_REG_CMD)
+            begin
+                memory[r1] [7:0] <= r2;
+                memory[r1] [15:8] <= r3;
+                memory[r1] [23:16] <= r4;
+                memory[r1] [31:24] <= r5;
+                // SET cmd_response ...
+                cmd_response[0] <= 8'hff;
+                cmd_response[1] <= 8'hff;
+                cmd_response[2] <= 8'h00;
+                cmd_response[3] <= 8'h01;
+                cmd_response[4] <= 8'h01;
+                cmd_response[5] <= 8'hee;
+                cmd_response[6] <= 8'hee;
+
+                cmd_response_bytes <= 7;
+            end
+            else
+            begin
+                if (r0 == GET_REG_CMD)
+                begin
+                    // SET cmd_response ...
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h04;
+                    cmd_response[4] <= memory[r1] [7:0];
+                    cmd_response[5] <= memory[r1] [15:8];
+                    cmd_response[6] <= memory[r1] [23:16];
+                    cmd_response[7] <= memory[r1] [31:24];
+                    cmd_response[8] <= 8'hee;
+                    cmd_response[9] <= 8'hee;
+                    cmd_response_bytes <= 10;
+                end
+                else
+                begin
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h01;
+                    cmd_response[4] <= 8'h02;
+                    cmd_response[5] <= 8'hee;
+                    cmd_response[6] <= 8'hee;
+
+                    cmd_response_bytes <= 7;
+                end
+            end
+            cmd_processed_received <= 1'b1;
+        end
+        CMD_FINALIZE_STATE:
+        begin
+            // finalize cmd
+            if (cmd_response_required == 1'b1)
+            begin
+                // after send set to 0
+                //if (cmd_tx_bytes_counter < cmd_response_bytes)
+                tx_transaction <= 1'b1;
+                // todo(UMV): add decoder module ...
+                if (tx_busy == 1'b0)
+                begin
+                    if (cmd_tx_bytes_counter == cmd_response_bytes)
+                    begin
+                        cmd_response_required <= 1'b0;
+                    end
+                    else
+                    begin
+                        tx_data <= cmd_response[cmd_tx_bytes_counter];
+                        tx_data_ready <= 1'b1;
+                        cmd_next_byte_protect <= 1'b0;
+                    end
+                end
+                else
+                begin
+                    if (tx_data_copied == 1'b0)
+                    begin
+                        if (cmd_next_byte_protect == 1'b0)
+                        begin
+                            cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
+                            cmd_next_byte_protect <= 1'b1;
+                        end
+                    end
+                    
+                end
+                // unless we don't have a buffered tx send byte after byte ...
+            end
+            else
+            begin
+                // clean up response ...
+                tx_transaction <= 1'b0;
+                tx_data_ready <= 1'b0;
+                cmd_next_byte_protect <= 1'b0;
+                cmd_finalize_counter <= cmd_finalize_counter + 1;
+                if (cmd_finalize_counter == 4'b1111)
+                begin
+                    device_state <= CLEANUP_STATE;
+                    cmd_finalize_counter <= 0;
+                    cmd_processed_received <= 1'b0;
+                end
+            end
+        end
+        CLEANUP_STATE:
+        begin
+            cmd_ready <= 1'b0;
+            cmd_receive_timeout <= 0;
+            device_state <= INITIAL_STATE;
+        end
+        default:
+        begin
+            device_state <= INITIAL_STATE;
+        end
+        endcase
     end
 end
 /*********************************************************************************/
