@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
 (
+    CAMAC_AVAILABLE_MODULES = 23,
     CAMAC_DATA_WIDTH = 24,
     CAMAC_MODULE_WIDTH = 6,
     CAMAC_FUNC_WIDTH = 5,
@@ -67,13 +68,14 @@ module Messbauer_CAMAC_Controller #
     // Сигналы управления
     output wire camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
     output wire camac_c,                             // сигнал сброс, контроллер -> магистраль
-    output wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
+    inout  wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
     output wire camac_s1,                            // сигнал строб S1, контроллер -> магистраль
-    output wire camac_s12,                           // сигнал строб S2, контроллер -> магистраль
+    output wire camac_s2,                            // сигнал строб S2, контроллер -> магистраль
     output wire camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
     input  wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
-    output wire [CAMAC_DATA_WIDTH-1:0] camac_w
+    output wire [CAMAC_DATA_WIDTH-1:0] camac_w,
+    input wire [CAMAC_AVAILABLE_MODULES - 1] camac_l
 );
 
 /******************************* Блок констант ***********************************/
@@ -161,6 +163,45 @@ wire [7:0] current_byte;
 wire [7:0] bytes_processed;
 
 assign fifo_read = fifo_encoder_read | rx_read;
+
+quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
+              .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
+serial_dev (.clk(clk), .rst(rst), .rx(rs232_rx), .tx(rs232_tx), .rts(rs232_rts), .cts(rs232_cts),
+            .rx_read(fifo_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
+            .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
+            .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
+
+serial_cmd_decoder #(.MAX_CMD_PAYLOAD_BYTES(8)) 
+decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
+         .cmd_processed_received(cmd_processed_received), 
+         .cmd_read_clk(fifo_encoder_read), .cmd_processed(cmd_decode_finished),
+         .cmd_decode_success(cmd_decode_success),
+         .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
+         .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
+         .cmd_payload_r6(r6), .cmd_payload_r7(r7),
+         .bad_sof(bad_sof), .no_space(no_space), .to_much_payload(bad_payload), 
+         .bad_eof(bad_eof), .current_byte(current_byte), .cmd_bytes_processed(bytes_processed));
+
+camac_controller_exchanger controller(.clk(clk), .rst(rst),
+                                      // Управление модулем CAMAC-цикла
+                                      .cmd(), .cmd_received(), .controller_busy(),
+                                      .camac_module(), .camac_module_function(), 
+                                      .camac_module_subaddr(), .camac_operation(), 
+                                      .camac_w0(), .camac_w1(), .camac_w2(),
+                                      .camac_r0(), .camac_r1(), .camac_r2(),
+                                      // Линии CAMAC
+                                      .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
+                                      .camax_x(camac_x), .camac_q(camac_q), .camac_l(camac_l), .camac_b(camac_b),
+                                      .camac_z(camac_z), .camac_c(camac_c), .camac_i(camac_i), 
+                                      .camac_s1(camac_s1), .camac_s2(camac_s2),
+                                      .camac_r(camac_r), camac_w(camac_w), .camac_l(camac_l)
+                                      );
+
+assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
+assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
+assign has_rx_data = received_bytes_counter[0]|received_bytes_counter[1]|received_bytes_counter[2]|
+                     received_bytes_counter[3]|received_bytes_counter[4]|received_bytes_counter[5]|
+                     received_bytes_counter[6]|received_bytes_counter[7];
 /*********************************************************************************/
 // this always implements the global reset that board generates at start
 always @(posedge clk)

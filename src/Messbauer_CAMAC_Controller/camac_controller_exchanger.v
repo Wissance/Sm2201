@@ -24,6 +24,7 @@
 
 module camac_controller_exchanger #
 (
+    CAMAC_AVAILABLE_MODULES = 23,
     CAMAC_DATA_WIDTH = 24,
     CAMAC_MODULE_WIDTH = 6,
     CAMAC_FUNC_WIDTH = 5,
@@ -64,10 +65,11 @@ module camac_controller_exchanger #
     inout  wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
     output reg  camac_s1,                            // сигнал строб S1, контроллер -> магистраль
     output reg  camac_s2,                            // сигнал строб S2, контроллер -> магистраль
-    output reg  camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
+    // output reg  camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
     input wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
-    output reg [CAMAC_DATA_WIDTH-1:0] camac_w
+    output reg [CAMAC_DATA_WIDTH-1:0] camac_w,
+    input wire [CAMAC_AVAILABLE_MODULES - 1] camac_l
 );
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
