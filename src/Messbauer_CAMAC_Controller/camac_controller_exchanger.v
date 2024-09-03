@@ -57,7 +57,6 @@ module camac_controller_exchanger #
     // Сигналы состояния
     input wire camac_x,                              // сигнал команда принята, модуль -> контроллер на любой NAF
     input wire camac_q,                              // сигнал ответ, модуль -> контроллер на любой NAF
-    input wire camac_l,                              // сигнал запрос на обслуживание, модуль -> контроллер
     output reg camac_b,                              // сигнал занято, контроллер -> магистраль, вырабатывается при любой операции контроллером
     // Сигналы управления
     output reg  camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
@@ -67,9 +66,9 @@ module camac_controller_exchanger #
     output reg  camac_s2,                            // сигнал строб S2, контроллер -> магистраль
     // output reg  camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
     // Сигналы передачи данных
-    input wire [CAMAC_DATA_WIDTH-1:0] camac_r,  // should be input && rename
+    input wire [CAMAC_DATA_WIDTH-1:0] camac_r,
     output reg [CAMAC_DATA_WIDTH-1:0] camac_w,
-    input wire [CAMAC_AVAILABLE_MODULES - 1] camac_l
+    input wire [CAMAC_AVAILABLE_MODULES - 1] camac_l // сигнал запрос на обслуживание, модуль -> контроллер
 );
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
