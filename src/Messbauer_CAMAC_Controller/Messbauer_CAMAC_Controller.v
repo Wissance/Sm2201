@@ -55,6 +55,10 @@ module Messbauer_CAMAC_Controller #
     output wire rs232_tx,                             // сигнал TX чтение данных PC <- устройство (контроллер крейта)
     input  wire rs232_cts,                            // сигнал Clear-to-send, PC выставляет когда готов принять данные
     output wire rs232_rts,                            // сигнал Ready-to-send, устройство выставляет когда готово отправить данные
+    // Сигналы индикации
+    output wire rx_led,                               // rx_led - индикатор Rx
+    output wire tx_led,                               // tx_led - индикатор Tx
+    output reg  [7:0] led_bus,                        // параллельный порт вывода состояния
     // Сигналы управления адресацией модулей (N, F, A)
     output wire [CAMAC_MODULE_WIDTH-1:0] camac_n,     // выбор модуля
     output wire [CAMAC_FUNC_WIDTH-1:0] camac_f,       // выбор функции
@@ -73,7 +77,7 @@ module Messbauer_CAMAC_Controller #
     // Сигналы передачи данных
     input  wire [CAMAC_DATA_WIDTH-1:0] camac_r,
     output wire [CAMAC_DATA_WIDTH-1:0] camac_w,
-    input  wire [CAMAC_AVAILABLE_MODULES - 1] camac_l // сигнал запрос на обслуживание, модуль -> контроллер
+    input  wire [CAMAC_AVAILABLE_MODULES - 1:0] camac_l // сигнал запрос на обслуживание, модуль -> контроллер
 );
 
 /******************************* Блок констант ***********************************/
@@ -189,7 +193,7 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_r0(), .camac_r1(), .camac_r2(),
                                       // Линии CAMAC
                                       .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
-                                      .camax_x(camac_x), .camac_q(camac_q), .camac_l(camac_l), .camac_b(camac_b),
+                                      .camac_x(camac_x), .camac_q(camac_q), .camac_b(camac_b),
                                       .camac_z(camac_z), .camac_c(camac_c), .camac_i(camac_i), 
                                       .camac_s1(camac_s1), .camac_s2(camac_s2),
                                       .camac_r(camac_r), .camac_w(camac_w), .camac_l(camac_l)

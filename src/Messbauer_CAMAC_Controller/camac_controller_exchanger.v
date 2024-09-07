@@ -41,7 +41,7 @@ module camac_controller_exchanger #
     input wire [7:0] camac_module,                   // номер модуля 1-23, от RS-232 получение
     input wire [7:0] camac_module_function,          // код функции
     input wire [7:0] camac_module_subaddr,           // субадрес
-    input wire [1:0] camac_opeartion,                // 0 - инициализация/обмлуживание, 1 - чтение, 2 - записб
+    input wire [1:0] camac_operation,                // 0 - инициализация/обмлуживание, 1 - чтение, 2 - записб
     input wire [7:0] camac_w0,                       // младший байт записи CAMAC
     input wire [7:0] camac_w1,                       // средний байт записи CAMAC
     input wire [7:0] camac_w2,                       // старший байт записи CAMAC
@@ -68,7 +68,7 @@ module camac_controller_exchanger #
     // Сигналы передачи данных
     input wire [CAMAC_DATA_WIDTH-1:0] camac_r,
     output reg [CAMAC_DATA_WIDTH-1:0] camac_w,
-    input wire [CAMAC_AVAILABLE_MODULES - 1] camac_l // сигнал запрос на обслуживание, модуль -> контроллер
+    input wire [CAMAC_AVAILABLE_MODULES - 1:0] camac_l // сигнал запрос на обслуживание, модуль -> контроллер
 );
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
@@ -210,7 +210,7 @@ begin
                     camac_n <= camac_module;
                     camac_f <= camac_module_function;
                     camac_a <= camac_module_subaddr;
-                    if (camac_opeartion == `WRITE_OPERATION)
+                    if (camac_operation == `WRITE_OPERATION)
                     begin
                         camac_w[7:0] <= camac_w0;
                         camac_w[15:8] <= camac_w1;
@@ -235,7 +235,7 @@ begin
                 counter <= counter + 1;
                 //if (camac_x == 1'b1)
                 //begin
-                    if (camac_opeartion == `READ_OPERATION)
+                    if (camac_operation == `READ_OPERATION)
                     begin
                         camac_r0 <= camac_r[7:0];
                         camac_r1 <= camac_r[15:8];
