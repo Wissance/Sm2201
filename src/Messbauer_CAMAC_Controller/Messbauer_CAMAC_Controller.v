@@ -53,8 +53,8 @@ module Messbauer_CAMAC_Controller #
     // RS232-сигналы
     input  wire rs232_rx,                             // сигнал RX чтение данных PC -> устройство (контроллер крейта)
     output wire rs232_tx,                             // сигнал TX чтение данных PC <- устройство (контроллер крейта)
-    input  wire rs232_cts,                            // сигнал Clear-to-send, PC выставляет когда готов принять данные
-    output wire rs232_rts,                            // сигнал Ready-to-send, устройство выставляет когда готово отправить данные
+    output wire rs232_cts,                            // сигнал Clear-to-send, PC выставляет когда готов принять данные
+    input  wire rs232_rts,                            // сигнал Ready-to-send, устройство выставляет когда готово отправить данные
     // Сигналы индикации
     output wire rx_led,                               // rx_led - индикатор Rx
     output wire tx_led,                               // tx_led - индикатор Tx
