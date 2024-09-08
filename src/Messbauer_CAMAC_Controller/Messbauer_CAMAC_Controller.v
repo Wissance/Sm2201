@@ -164,6 +164,13 @@ wire bad_payload;
 wire bad_eof;
 wire [7:0] current_byte;
 wire [7:0] bytes_processed;
+// 7. Регистры и проводники для управления модулями КАМАК и обмена по КАМАК
+reg camac_cmd;
+wire camac_cmd_received;
+wire camac_exchanger_busy;
+wire [7:0] camac_r0;
+wire [7:0] camac_r1;
+wire [7:0] camac_r2;
 
 assign fifo_read = fifo_encoder_read | rx_read;
 
@@ -187,11 +194,11 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
 
 camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       // Управление модулем CAMAC-цикла
-                                      .cmd(), .cmd_received(), .controller_busy(),
+                                      .cmd(camac_cmd), .cmd_received(camac_cmd_received), .controller_busy(camac_exchanger_busy),
                                       .camac_module(r1), .camac_module_function(r3), 
                                       .camac_module_subaddr(r2), .camac_operation(r0), 
                                       .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
-                                      .camac_r0(), .camac_r1(), .camac_r2(),
+                                      .camac_r0(camac_r0), .camac_r1(camac_r1), .camac_r2(camac_r2),
                                       // Линии CAMAC
                                       .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
                                       .camac_x(camac_x), .camac_q(camac_q), .camac_b(camac_b),
@@ -332,7 +339,7 @@ begin
         cmd_response_bytes <= 0;
         cmd_tx_bytes_counter <= 0;
         cmd_next_byte_protect <= 0;
-
+        camac_cmd <=1'b0;
         led_bus <= 8'b11111111;
     end
     else
@@ -371,6 +378,7 @@ begin
                 cmd_response_bytes <= 0;
                 cmd_tx_bytes_counter <= 0;
                 cmd_finalize_counter <= 0;
+                camac_cmd <=1'b0;
             end
         end
         AWAIT_CMD_STATE:
@@ -452,6 +460,7 @@ begin
         CMD_DETECTED_STATE:
         begin
             device_state <= CMD_EXECUTE_START_STATE;
+            camac_cmd <=1'b0;
         end
         CMD_EXECUTE_START_STATE:
         begin
