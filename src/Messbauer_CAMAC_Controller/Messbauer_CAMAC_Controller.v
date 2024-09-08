@@ -94,10 +94,11 @@ localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
 localparam reg [3:0] CMD_DECODE_STATE = 4'b0010;
 localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
 localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
-localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
-localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0110;
-localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
-localparam reg [3:0] CLEANUP_STATE = 4'b1000;
+localparam reg [3:0] CMD_EXECUTE_START_STATE = 4'b0101;
+localparam reg [3:0] CMD_EXECUTE_FINISH_STATE = 4'b0110;
+localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0111;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b1000;
+localparam reg [3:0] CLEANUP_STATE = 4'b1001;
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
@@ -187,9 +188,9 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
 camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       // Управление модулем CAMAC-цикла
                                       .cmd(), .cmd_received(), .controller_busy(),
-                                      .camac_module(), .camac_module_function(), 
-                                      .camac_module_subaddr(), .camac_operation(), 
-                                      .camac_w0(), .camac_w1(), .camac_w2(),
+                                      .camac_module(r1), .camac_module_function(r3), 
+                                      .camac_module_subaddr(r2), .camac_operation(r0), 
+                                      .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
                                       .camac_r0(), .camac_r1(), .camac_r2(),
                                       // Линии CAMAC
                                       .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
@@ -450,12 +451,12 @@ begin
         end
         CMD_DETECTED_STATE:
         begin
-            device_state <= CMD_EXECUTE_STATE;
+            device_state <= CMD_EXECUTE_START_STATE;
         end
-        CMD_EXECUTE_STATE:
+        CMD_EXECUTE_START_STATE:
         begin
             // execute cmd: get or set register
-            device_state <= CMD_FINALIZE_STATE;
+            device_state <= CMD_EXECUTE_FINISH_STATE;
             cmd_tx_bytes_counter <= 0;
             cmd_next_byte_protect <= 0;
             if (r0 == SET_REG_CMD)
@@ -506,6 +507,10 @@ begin
                 end
             end
             cmd_processed_received <= 1'b1;
+        end
+        CMD_EXECUTE_FINISH_STATE:
+        begin
+            device_state <= CMD_FINALIZE_STATE;
         end
         CMD_FINALIZE_STATE:
         begin
