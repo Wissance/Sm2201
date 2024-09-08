@@ -102,8 +102,9 @@ localparam reg [3:0] CLEANUP_STATE = 4'b1001;
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
-localparam reg [7:0]  SET_REG_CMD = 1;
-localparam reg [7:0]  GET_REG_CMD = 2;
+localparam reg [7:0]  SET_CAMAC_MODULE_REG_CMD = 1;
+localparam reg [7:0]  GET_CAMAC_MODULE_REG_CMD = 2;
+localparam reg [7:0]  GET_MODULES_LAM_CMD = 3;
 
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
@@ -468,26 +469,26 @@ begin
             device_state <= CMD_EXECUTE_FINISH_STATE;
             cmd_tx_bytes_counter <= 0;
             cmd_next_byte_protect <= 0;
-            if (r0 == SET_REG_CMD)
-            begin
-                memory[r1] [7:0] <= r2;
-                memory[r1] [15:8] <= r3;
-                memory[r1] [23:16] <= r4;
-                memory[r1] [31:24] <= r5;
-                // SET cmd_response ...
-                cmd_response[0] <= 8'hff;
-                cmd_response[1] <= 8'hff;
-                cmd_response[2] <= 8'h00;
-                cmd_response[3] <= 8'h01;
-                cmd_response[4] <= 8'h01;
-                cmd_response[5] <= 8'hee;
-                cmd_response[6] <= 8'hee;
+            case (r0)
+                SET_CAMAC_MODULE_REG_CMD:
+                begin
+                    // TODO(UMV): change ...
+                    memory[r1] [7:0] <= r2;
+                    memory[r1] [15:8] <= r3;
+                    memory[r1] [23:16] <= r4;
+                    memory[r1] [31:24] <= r5;
+                    // SET cmd_response ...
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h01;
+                    cmd_response[4] <= 8'h01;
+                    cmd_response[5] <= 8'hee;
+                    cmd_response[6] <= 8'hee;
 
-                cmd_response_bytes <= 7;
-            end
-            else
-            begin
-                if (r0 == GET_REG_CMD)
+                    cmd_response_bytes <= 7;
+                end
+                GET_CAMAC_MODULE_REG_CMD:
                 begin
                     // SET cmd_response ...
                     cmd_response[0] <= 8'hff;
@@ -502,7 +503,10 @@ begin
                     cmd_response[9] <= 8'hee;
                     cmd_response_bytes <= 10;
                 end
-                else
+                GET_MODULES_LAM_CMD:
+                begin
+                end
+                default:
                 begin
                     cmd_response[0] <= 8'hff;
                     cmd_response[1] <= 8'hff;
@@ -514,12 +518,14 @@ begin
 
                     cmd_response_bytes <= 7;
                 end
-            end
-            cmd_processed_received <= 1'b1;
+            endcase
+            
         end
         CMD_EXECUTE_FINISH_STATE:
         begin
             device_state <= CMD_FINALIZE_STATE;
+            // todo(UMV) this one in case we have data 
+            cmd_processed_received <= 1'b1;
         end
         CMD_FINALIZE_STATE:
         begin
