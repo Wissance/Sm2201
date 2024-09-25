@@ -195,7 +195,8 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
 
 camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       // Управление модулем CAMAC-цикла
-                                      .cmd(camac_cmd), .cmd_received(camac_cmd_received), .controller_busy(camac_exchanger_busy),
+                                      .cmd(camac_cmd), .cmd_received(camac_cmd_received), 
+                                      .controller_busy(camac_exchanger_busy),
                                       .camac_module(r1), .camac_module_function(r3), 
                                       .camac_module_subaddr(r2), .camac_operation(r0), 
                                       .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
@@ -460,8 +461,10 @@ begin
         end
         CMD_DETECTED_STATE:
         begin
-            device_state <= CMD_EXECUTE_START_STATE;
-            camac_cmd <=1'b0;
+            if (camac_exchanger_busy == 1'b0)
+            begin
+                device_state <= CMD_EXECUTE_START_STATE;
+            end
         end
         CMD_EXECUTE_START_STATE:
         begin
@@ -472,11 +475,11 @@ begin
             case (r0)
                 SET_CAMAC_MODULE_REG_CMD:
                 begin
-                    // TODO(UMV): change ...
                     memory[r1] [7:0] <= r2;
                     memory[r1] [15:8] <= r3;
                     memory[r1] [23:16] <= r4;
                     memory[r1] [31:24] <= r5;
+                    camac_cmd <= 1'b1;
                     // SET cmd_response ...
                     cmd_response[0] <= 8'hff;
                     cmd_response[1] <= 8'hff;
@@ -485,26 +488,23 @@ begin
                     cmd_response[4] <= 8'h01;
                     cmd_response[5] <= 8'hee;
                     cmd_response[6] <= 8'hee;
-
                     cmd_response_bytes <= 7;
                 end
                 GET_CAMAC_MODULE_REG_CMD:
                 begin
+                    camac_cmd <= 1'b1;
                     // SET cmd_response ...
                     cmd_response[0] <= 8'hff;
                     cmd_response[1] <= 8'hff;
                     cmd_response[2] <= 8'h00;
                     cmd_response[3] <= 8'h04;
-                    cmd_response[4] <= memory[r1] [7:0];
-                    cmd_response[5] <= memory[r1] [15:8];
-                    cmd_response[6] <= memory[r1] [23:16];
-                    cmd_response[7] <= memory[r1] [31:24];
                     cmd_response[8] <= 8'hee;
                     cmd_response[9] <= 8'hee;
                     cmd_response_bytes <= 10;
                 end
                 GET_MODULES_LAM_CMD:
                 begin
+                    // todo(UMV): read LAM
                 end
                 default:
                 begin
@@ -515,7 +515,6 @@ begin
                     cmd_response[4] <= 8'h02;
                     cmd_response[5] <= 8'hee;
                     cmd_response[6] <= 8'hee;
-
                     cmd_response_bytes <= 7;
                 end
             endcase
@@ -523,9 +522,19 @@ begin
         end
         CMD_EXECUTE_FINISH_STATE:
         begin
-            device_state <= CMD_FINALIZE_STATE;
-            // todo(UMV) this one in case we have data 
-            cmd_processed_received <= 1'b1;
+            if (camac_exchanger_busy == 1'b0)
+            begin
+                cmd_processed_received <= 1'b1;
+                camac_cmd <=1'b0;
+                if (r0 == 8'b00000001)
+                begin
+                    cmd_response[4] <= memory[r1] [7:0];
+                    cmd_response[5] <= memory[r1] [15:8];
+                    cmd_response[6] <= memory[r1] [23:16];
+                    cmd_response[7] <= memory[r1] [31:24];
+                end
+                device_state <= CMD_FINALIZE_STATE;
+            end
         end
         CMD_FINALIZE_STATE:
         begin

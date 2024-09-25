@@ -41,7 +41,7 @@ module camac_controller_exchanger #
     input wire [7:0] camac_module,                   // номер модуля 1-23, от RS-232 получение
     input wire [7:0] camac_module_function,          // код функции
     input wire [7:0] camac_module_subaddr,           // субадрес
-    input wire [1:0] camac_operation,                // 0 - инициализация/обмлуживание, 1 - чтение, 2 - записб
+    input wire [1:0] camac_operation,                // 0 - инициализация/обcлуживание, 1 - чтение, 2 - запись
     input wire [7:0] camac_w0,                       // младший байт записи CAMAC
     input wire [7:0] camac_w1,                       // средний байт записи CAMAC
     input wire [7:0] camac_w2,                       // старший байт записи CAMAC
