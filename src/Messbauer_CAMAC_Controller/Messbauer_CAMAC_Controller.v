@@ -475,10 +475,10 @@ begin
             case (r0)
                 SET_CAMAC_MODULE_REG_CMD:
                 begin
-                    memory[r1] [7:0] <= r2;
-                    memory[r1] [15:8] <= r3;
-                    memory[r1] [23:16] <= r4;
-                    memory[r1] [31:24] <= r5;
+                    memory[0] [7:0] <= r2;
+                    memory[0] [15:8] <= r3;
+                    memory[0] [23:16] <= r4;
+                    memory[0] [31:24] <= 8'h00;
                     camac_cmd <= 1'b1;
                     // SET cmd_response ...
                     cmd_response[0] <= 8'hff;
@@ -498,13 +498,22 @@ begin
                     cmd_response[1] <= 8'hff;
                     cmd_response[2] <= 8'h00;
                     cmd_response[3] <= 8'h04;
+                    cmd_response[7] <= 8'hee;
                     cmd_response[8] <= 8'hee;
-                    cmd_response[9] <= 8'hee;
-                    cmd_response_bytes <= 10;
+                    cmd_response_bytes <= 9;
                 end
                 GET_MODULES_LAM_CMD:
                 begin
-                    // todo(UMV): read LAM
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h03;
+                    cmd_response[4] <= camac_l[7:0];
+                    cmd_response[5] <= camac_l[15:8];
+                    cmd_response[6] <= camac_l[CAMAC_AVAILABLE_MODULES - 1:16];
+                    cmd_response[7] <= 8'hee;
+                    cmd_response[8] <= 8'hee;
+                    cmd_response_bytes <= 9;
                 end
                 default:
                 begin
@@ -526,12 +535,15 @@ begin
             begin
                 cmd_processed_received <= 1'b1;
                 camac_cmd <=1'b0;
-                if (r0 == 8'b00000001)
+                if (r0 == 8'b00000001)                     // READ OPERATION
                 begin
-                    cmd_response[4] <= memory[r1] [7:0];
-                    cmd_response[5] <= memory[r1] [15:8];
-                    cmd_response[6] <= memory[r1] [23:16];
-                    cmd_response[7] <= memory[r1] [31:24];
+                    cmd_response[4] <= camac_r [7:0];
+                    cmd_response[5] <= camac_r [15:8]; 
+                    cmd_response[6] <= camac_r [23:16];
+                    memory[1] [7:0] <= camac_r [7:0];
+                    memory[1] [15:8] <= camac_r [15:8];
+                    memory[1] [23:16] <= camac_r [23:16];
+                    memory[1] [31:24] <= 8'h00;
                 end
                 device_state <= CMD_FINALIZE_STATE;
             end
