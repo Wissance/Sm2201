@@ -66,3 +66,5 @@ src/Messbauer_CAMAC_Accumulator/db/
 src/Messbauer_CAMAC_Accumulator/incremental_db/
 
 src/Messbauer_CAMAC_Accumulator/output_files/
+
+src/Messbauer_CAMAC_Accumulator/simulation/
