@@ -20,6 +20,47 @@
 
 module Messbauer_CAMAC_Controller_tb();
 
-Messbauer_CAMAC_Controller camac_controller();
+reg  clk;
+reg  rx;
+wire tx;
+reg  rts;
+wire cts;
+reg  [31:0] counter;
+wire tx_led;
+wire rx_led;
+wire [7:0] led_bus;
+wire [5:0] camac_n;
+wire [4:0] camac_f;
+wire [3:0] camac_a;
+reg  camac_x;
+reg  camac_q;
+wire camac_b;
+wire camac_z;
+wire camac_c;
+wire camac_s1;
+wire camac_s2;
+wire camac_h;
+
+Messbauer_CAMAC_Controller camac_controller(.clk(clk), .rs232_rx(rx), .rs232_tx(tx), 
+                                            .rs232_cts(cts), .rs232_rts(rts),
+                                            .rx_led(rx_led), .tx_led(tx_led), .led_bus(led_bus),
+                                            .camac_n(camac_n),   .camac_f(camac_f),   .camac_a(camac_a),
+                                            .camac_x(camac_x),   .camac_q(camac_q),   .camac_b(camac_b),
+                                            .camac_z(camac_z),   .camac_c(camac_c),   .camac_i(),
+                                            .camac_s1(camac_s1), .camac_s2(camac_s2), .camac_h(camac_h),
+                                            .camac_r(), .camac_w(), .camac_l());
+
+initial
+begin
+    counter <= 0;
+    rx <= 1'b1;
+    clk <= 1'b0;
+end
+
+always
+begin
+    #10 clk <= ~clk; // 50 MHz
+    counter <= counter + 1;
+end
 
 endmodule
