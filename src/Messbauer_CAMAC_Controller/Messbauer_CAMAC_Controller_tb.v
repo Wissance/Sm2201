@@ -40,15 +40,24 @@ wire camac_c;
 wire camac_s1;
 wire camac_s2;
 wire camac_h;
+wire [23:0] camac_w;
+reg  [23:0] camac_r;
+reg  [22:0] camac_l;
+wire camac_i_w;
+reg  camac_i_r;
+reg  write_op;
+wire camac_i;
+
+assign camac_i = write_op == 1'b1 ? camac_i_w : camac_i_r;
 
 Messbauer_CAMAC_Controller camac_controller(.clk(clk), .rs232_rx(rx), .rs232_tx(tx), 
                                             .rs232_cts(cts), .rs232_rts(rts),
                                             .rx_led(rx_led), .tx_led(tx_led), .led_bus(led_bus),
                                             .camac_n(camac_n),   .camac_f(camac_f),   .camac_a(camac_a),
                                             .camac_x(camac_x),   .camac_q(camac_q),   .camac_b(camac_b),
-                                            .camac_z(camac_z),   .camac_c(camac_c),   .camac_i(),
+                                            .camac_z(camac_z),   .camac_c(camac_c),   .camac_i(camac_i),
                                             .camac_s1(camac_s1), .camac_s2(camac_s2), .camac_h(camac_h),
-                                            .camac_r(), .camac_w(), .camac_l());
+                                            .camac_r(camac_r), .camac_w(camac_w), .camac_l(camac_l));
 
 initial
 begin
