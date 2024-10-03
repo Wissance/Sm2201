@@ -41,11 +41,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
 (
-    CAMAC_AVAILABLE_MODULES = 23,
-    CAMAC_DATA_WIDTH = 24,
-    CAMAC_MODULE_WIDTH = 6,
-    CAMAC_FUNC_WIDTH = 5,
-    CAMAC_SUB_ADDR_WIDTH = 4
+    parameter CAMAC_AVAILABLE_MODULES = 23,
+    parameter CAMAC_DATA_WIDTH = 24,
+    parameter CAMAC_MODULE_WIDTH = 6,
+    parameter CAMAC_FUNC_WIDTH = 5,
+    parameter CAMAC_SUB_ADDR_WIDTH = 4
 )
 (
     // Общие сигналы управления: тактовая частота и чигнал сброса

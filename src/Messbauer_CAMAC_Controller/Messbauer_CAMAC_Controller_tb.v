@@ -70,9 +70,9 @@ begin
     camac_r <= 0;
     camac_l <= 0;
     write_op <= 1'b0;
-    // camac_i_r <= 1'b1;
-    // camac_x <= 1'b1;
-    // camac_q <= 1'b1;
+    camac_i_r <= 1'b1;
+    camac_x <= 1'b1;
+    camac_q <= 1'b1;
 end
 
 always
