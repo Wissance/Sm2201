@@ -819,7 +819,7 @@ begin
     // 2. Sending CMD to read module Reg - 0xFF 0xFF 0x00 0x04 0x02 0x14 0x0E 0x09 0xEE 0xEE
     // 2.1 First  SOF byte - 0xFF
     // start bit
-    if (counter == counter == 2 * 300 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 300 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0; 
     end
@@ -1297,88 +1297,88 @@ begin
         rx <= 1'b1;
     end
     // b4
-    if (counter == 2 * 126 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 393 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0;
     end
     // b5
-    if (counter == 2 * 393 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
-    begin
-        rx <= 1'b1;
-    end
-    // b6
     if (counter == 2 * 394 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
-    // b7
+    // b6
     if (counter == 2 * 395 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
-    // parity (even)
+    // b7
     if (counter == 2 * 396 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        rx <= 1'b1;
+    end
+    // parity (even)
+    if (counter == 2 * 397 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0;
     end
     // stop bit
-    if (counter == 2 * 397 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 398 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
     // 2.7 Second EOF byte - 0xEE
     // start bit
-    if (counter == 2 * 398 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 399 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0; 
     end
     // b0
-    if (counter == 2 * 399 * RS232_BIT_TICKS + EXCHANGE_OFFSET)  // we multiply on 2 because counter changes twice a period
+    if (counter == 2 * 400 * RS232_BIT_TICKS + EXCHANGE_OFFSET)  // we multiply on 2 because counter changes twice a period
     begin
         rx <= 1'b0;
     end
     // b1
-    if (counter == 2 * 400 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
-    begin
-        rx <= 1'b1;
-    end
-    // b2
     if (counter == 2 * 401 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
-    // b3
+    // b2
     if (counter == 2 * 402 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
-    // b4
+    // b3
     if (counter == 2 * 403 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        rx <= 1'b1;
+    end
+    // b4
+    if (counter == 2 * 404 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0;
     end
     // b5
-    if (counter == 2 * 404 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
-    begin
-        rx <= 1'b1;
-    end
-    // b6
     if (counter == 2 * 405 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
-    // b7
+    // b6
     if (counter == 2 * 406 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        rx <= 1'b1;
+    end
+    // b7
+    if (counter == 2 * 407 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // parity (even)
-    if (counter == 2 * 407 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 408 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0;
     end
     // stop bit
-    if (counter == 2 * 408 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 409 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b1;
     end
