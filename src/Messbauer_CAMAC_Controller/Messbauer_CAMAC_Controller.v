@@ -100,7 +100,7 @@ localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0111;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b1000;
 localparam reg [3:0] CLEANUP_STATE = 4'b1001;
 
-localparam reg [3:0]  MIN_CMD_LENGTH = 8;
+localparam reg [3:0]  MIN_CMD_LENGTH = 7;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
 localparam reg [7:0]  SET_CAMAC_MODULE_REG_CMD = 1;
 localparam reg [7:0]  GET_CAMAC_MODULE_REG_CMD = 2;
@@ -469,7 +469,6 @@ begin
         CMD_EXECUTE_START_STATE:
         begin
             // execute cmd: get or set register
-            device_state <= CMD_EXECUTE_FINISH_STATE;
             cmd_tx_bytes_counter <= 0;
             cmd_next_byte_protect <= 0;
             case (r0)
@@ -489,6 +488,7 @@ begin
                     cmd_response[5] <= 8'hee;
                     cmd_response[6] <= 8'hee;
                     cmd_response_bytes <= 7;
+                    device_state <= CMD_EXECUTE_FINISH_STATE;
                 end
                 GET_CAMAC_MODULE_REG_CMD:
                 begin
@@ -497,10 +497,11 @@ begin
                     cmd_response[0] <= 8'hff;
                     cmd_response[1] <= 8'hff;
                     cmd_response[2] <= 8'h00;
-                    cmd_response[3] <= 8'h04;
+                    cmd_response[3] <= 8'h03;
                     cmd_response[7] <= 8'hee;
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
+                    device_state <= CMD_EXECUTE_FINISH_STATE;
                 end
                 GET_MODULES_LAM_CMD:
                 begin
@@ -514,6 +515,8 @@ begin
                     cmd_response[7] <= 8'hee;
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
+                    cmd_processed_received <= 1'b1;
+                    device_state <= CMD_FINALIZE_STATE;
                 end
                 default:
                 begin
@@ -525,6 +528,8 @@ begin
                     cmd_response[5] <= 8'hee;
                     cmd_response[6] <= 8'hee;
                     cmd_response_bytes <= 7;
+                    cmd_processed_received <= 1'b1;
+                    device_state <= CMD_FINALIZE_STATE;
                 end
             endcase
             
@@ -534,8 +539,8 @@ begin
             if (camac_exchanger_busy == 1'b0)
             begin
                 cmd_processed_received <= 1'b1;
-                camac_cmd <=1'b0;
-                if (r0 == 8'b00000001)                     // READ OPERATION
+                camac_cmd <= 1'b0;
+                if (r0 == SET_CAMAC_MODULE_REG_CMD)                     // READ OPERATION
                 begin
                     cmd_response[4] <= camac_r [7:0];
                     cmd_response[5] <= camac_r [15:8]; 
