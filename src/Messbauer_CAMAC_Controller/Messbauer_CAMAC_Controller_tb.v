@@ -1384,6 +1384,12 @@ begin
     end
 
     // todo(UMV): Add some checks
+    if(counter == 2 * 400 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        camac_r[7:0] <= 8'hAA;
+        camac_r[15:8] <= 8'hBB;
+        camac_r[23:16] <= 8'hCC;
+    end
 
     // 3. Sendign CMD to read LAM status 0xFF 0xFF 0x00 0x01 0x03 0xEE 0xEE
     // 3.1 First  SOF byte - 0xFF
@@ -1780,7 +1786,15 @@ begin
     begin
         rx <= 1'b1;
     end
+
     // todo(UMV): Add some checks
+        // todo(UMV): Add some checks
+    if(counter == 2 * 670 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        camac_l[7:0] <= 8'h04;
+        camac_l[15:8] <= 8'h00;
+        camac_l[23:16] <= 8'h20;
+    end
 
     // 4. Sendign Unknown CMD 0xFF 0xFF 0x00 0x01 0x04 0xEE 0xEE
     // 4.1 First  SOF byte - 0xFF
@@ -2747,6 +2761,12 @@ begin
     end
 
     // todo(UMV): Add some checks
+    if(counter == 2 * 1400 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    begin
+        camac_r[7:0] <= 8'h23;
+        camac_r[15:8] <= 8'h45;
+        camac_r[23:16] <= 8'h67;
+    end
 
 end
 
