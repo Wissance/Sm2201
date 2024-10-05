@@ -815,6 +815,16 @@ begin
     end
 
     // todo(UMV): Add some checks
+    if (counter == 154988)
+    begin
+        camac_x <= 1'b0;
+        camac_q <= 1'b0;
+    end
+    if (counter == 155060)
+    begin
+        camac_x <= 1'b1;
+        camac_q <= 1'b1;
+    end
 
     // 2. Sending CMD to read module Reg - 0xFF 0xFF 0x00 0x04 0x02 0x14 0x0E 0x09 0xEE 0xEE
     // 2.1 First  SOF byte - 0xFF
