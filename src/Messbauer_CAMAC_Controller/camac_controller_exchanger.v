@@ -120,6 +120,7 @@ begin
         camac_r2 <= 8'h00;
         camac_z <= 1'b1;
         camac_i_w <= 1'b1;
+        camac_w <= 0;
     end
     else
     begin
@@ -156,7 +157,7 @@ begin
                 counter <= counter + 1;
                 if (counter == CAMAC_S2_INIT_LEN)
                 begin
-                    counter <= 0;
+                    counter <= 8'h00;
                     camac_state <= INIT_S2_STROBE_END_STATE;
                 end
             end
@@ -166,7 +167,7 @@ begin
                 counter <= counter + 1;
                 if (counter == CAMAC_AFTER_S2_DELAY)
                 begin
-                    counter <= 0;
+                    counter <= 8'h00;
                     camac_state <= END_INIT_STATE;
                 end
             end
@@ -232,7 +233,8 @@ begin
             S1_STROBE_BEGIN_STATE:
             begin
                 // запись и чтение осуществялется по строб сигналу S1
-                counter <= counter + 1;
+                camac_s1 <= 1'b0;
+                // counter <= counter + 1;
                 //if (camac_x == 1'b1)
                 //begin
                     if (camac_operation == `READ_OPERATION)
@@ -251,7 +253,7 @@ begin
                 if (counter > CAMAC_S1_MIN_LEN)
                 begin 
                     camac_state <= S1_TO_S2_STROBE_DELAY_STATE;
-                    camac_s1 <= 1'b0;
+                    camac_s1 <= 1'b1;
                     counter <= 0;
                 end
             end
@@ -267,6 +269,7 @@ begin
             end
             S2_STROBE_BEGIN_STATE:
             begin
+                camac_s2 <= 1'b0;
                 camac_state <= S2_STROBE_END_STATE;
             end
             S2_STROBE_END_STATE:
@@ -274,7 +277,7 @@ begin
                 counter <= counter + 1;
                 if (counter > CAMAC_S2_MIN_LEN)
                 begin 
-                    camac_s2 <= 1'b0;
+                    camac_s2 <= 1'b1;
                     counter <= 0;
                     camac_state <= FREE_CAMAC_BUSY_STATE;
                 end
