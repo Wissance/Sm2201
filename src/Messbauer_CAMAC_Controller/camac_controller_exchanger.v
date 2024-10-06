@@ -18,8 +18,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 `define COMMON_OPERATION         0
-`define READ_OPERATION           1
-`define WRITE_OPERATION          2
+`define WRITE_OPERATION          1
+`define READ_OPERATION           2
 `define CHECK_LAM_OPERATION      3
 
 module camac_controller_exchanger #
