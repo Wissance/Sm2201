@@ -1,0 +1,16 @@
+
+
+LIBRARY      MAX
+DESCRIPTION  'MaxDLL'
+EXETYPE      WINDOWS
+STUB	     'WINSTUB.EXE'
+CODE	     MOVEABLE
+DATA	     MOVEABLE SINGLE
+HEAPSIZE     1024
+EXPORTS      WEP
+	     initport
+	     restoreport
+	     naf
+	     naf16
+
+
