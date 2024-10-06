@@ -39,3 +39,7 @@
 будет добавлен позднее ...
 
 ### 3. Авторы
+
+<a href="https://github.com/Wissance/Sm2201/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Wissance/Sm2201" />
+</a>
