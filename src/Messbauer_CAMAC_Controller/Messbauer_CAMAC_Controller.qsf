@@ -66,4 +66,103 @@ set_global_assignment -name EDA_TEST_BENCH_NAME Messbauer_CAMAC_Controller_tb -s
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id Messbauer_CAMAC_Controller_tb
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME Messbauer_CAMAC_Controller_tb -section_id Messbauer_CAMAC_Controller_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE Messbauer_CAMAC_Controller_tb.v -section_id Messbauer_CAMAC_Controller_tb
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk
+set_location_assignment PIN_T2 -to clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_rx
+set_location_assignment PIN_AB19 -to rs232_rx
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rx_led
+set_location_assignment PIN_E4 -to rx_led
+set_location_assignment PIN_AB20 -to rs232_tx
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_tx
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_rts
+set_location_assignment PIN_Y21 -to rs232_rts
+set_location_assignment PIN_W21 -to rs232_cts
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_cts
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to tx_led
+set_location_assignment PIN_V21 -to tx_led
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus
+set_location_assignment PIN_J21 -to led_bus[0]
+set_location_assignment PIN_K21 -to led_bus[1]
+set_location_assignment PIN_L21 -to led_bus[2]
+set_location_assignment PIN_M21 -to led_bus[3]
+set_location_assignment PIN_N21 -to led_bus[4]
+set_location_assignment PIN_P21 -to led_bus[5]
+set_location_assignment PIN_R21 -to led_bus[6]
+set_location_assignment PIN_U21 -to led_bus[7]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rx
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to tx
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[5]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to camac_l[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[4]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to camac_l[12]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_n
+set_location_assignment PIN_AB13 -to camac_n[0]
+set_location_assignment PIN_AB14 -to camac_n[1]
+set_location_assignment PIN_AB15 -to camac_n[2]
+set_location_assignment PIN_AB16 -to camac_n[3]
+set_location_assignment PIN_AB17 -to camac_n[4]
+set_location_assignment PIN_AB18 -to camac_n[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[23]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[22]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[21]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[20]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[19]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[18]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[17]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[16]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_q
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[15]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[14]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[13]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[12]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[11]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[10]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_r
+set_location_assignment PIN_R1 -to camac_r[0]
+set_location_assignment PIN_P1 -to camac_r[1]
+set_location_assignment PIN_N1 -to camac_r[2]
+set_location_assignment PIN_M1 -to camac_r[3]
+set_location_assignment PIN_J1 -to camac_r[4]
+set_location_assignment PIN_H1 -to camac_r[5]
+set_location_assignment PIN_F1 -to camac_r[6]
+set_location_assignment PIN_E1 -to camac_r[7]
+set_location_assignment PIN_C1 -to camac_r[8]
+set_location_assignment PIN_B1 -to camac_r[9]
+set_location_assignment PIN_B3 -to camac_r[10]
+set_location_assignment PIN_B4 -to camac_r[11]
+set_location_assignment PIN_C4 -to camac_r[12]
+set_location_assignment PIN_B5 -to camac_r[13]
+set_location_assignment PIN_B6 -to camac_r[14]
+set_location_assignment PIN_B7 -to camac_r[15]
+set_location_assignment PIN_B8 -to camac_r[16]
+set_location_assignment PIN_B9 -to camac_r[17]
+set_location_assignment PIN_B10 -to camac_r[18]
+set_location_assignment PIN_B11 -to camac_r[19]
+set_location_assignment PIN_B12 -to camac_r[20]
+set_location_assignment PIN_B13 -to camac_r[21]
+set_location_assignment PIN_B14 -to camac_r[22]
+set_location_assignment PIN_B15 -to camac_r[23]
+set_location_assignment PIN_B16 -to camac_q
