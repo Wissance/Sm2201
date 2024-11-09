@@ -96,9 +96,10 @@ localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
 localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 localparam reg [3:0] CMD_EXECUTE_START_STATE = 4'b0101;
 localparam reg [3:0] CMD_EXECUTE_FINISH_STATE = 4'b0110;
-localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0111;
-localparam reg [3:0] SEND_RESPONSE_STATE = 4'b1000;
-localparam reg [3:0] CLEANUP_STATE = 4'b1001;
+localparam reg [3:0] CMD_FINALIZE_DELAY_STATE = 4'b0111;
+localparam reg [3:0] CMD_FINALIZE_STATE = 4'b1000;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b1001;
+localparam reg [3:0] CLEANUP_STATE = 4'b1010;
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 7;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
@@ -471,6 +472,7 @@ begin
             // execute cmd: get or set register
             cmd_tx_bytes_counter <= 0;
             cmd_next_byte_protect <= 0;
+            cmd_finalize_counter <= 0;
             case (r0)
                 SET_CAMAC_MODULE_REG_CMD:
                 begin
@@ -515,8 +517,8 @@ begin
                     cmd_response[7] <= 8'hee;
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
-                    cmd_processed_received <= 1'b1;
-                    device_state <= CMD_FINALIZE_STATE;
+                    //cmd_processed_received <= 1'b1;
+                    device_state <= CMD_FINALIZE_DELAY_STATE;
                 end
                 default:
                 begin
@@ -528,8 +530,8 @@ begin
                     cmd_response[5] <= 8'hee;
                     cmd_response[6] <= 8'hee;
                     cmd_response_bytes <= 7;
-                    cmd_processed_received <= 1'b1;
-                    device_state <= CMD_FINALIZE_STATE;
+                    //cmd_processed_received <= 1'b1;
+                    device_state <= CMD_FINALIZE_DELAY_STATE;
                 end
             endcase
             
@@ -538,7 +540,7 @@ begin
         begin
             if (camac_exchanger_busy == 1'b0)
             begin
-                cmd_processed_received <= 1'b1;
+                //cmd_processed_received <= 1'b1;
                 camac_cmd <= 1'b0;
                 if (r0 == SET_CAMAC_MODULE_REG_CMD)                     // READ OPERATION
                 begin
@@ -550,7 +552,17 @@ begin
                     memory[1] [23:16] <= camac_r [23:16];
                     memory[1] [31:24] <= 8'h00;
                 end
-                device_state <= CMD_FINALIZE_STATE;
+                device_state <= CMD_FINALIZE_DELAY_STATE;
+            end
+        end
+        CMD_FINALIZE_DELAY_STATE:
+        begin
+            cmd_processed_received <= 1'b1;
+            cmd_finalize_counter <= cmd_finalize_counter + 1;
+            if (cmd_finalize_counter == 4'b1000)
+            begin
+               cmd_finalize_counter <= 0;
+               device_state <= CMD_FINALIZE_STATE;
             end
         end
         CMD_FINALIZE_STATE:
