@@ -159,7 +159,7 @@ set_location_assignment PIN_B9 -to camac_r[17]
 set_location_assignment PIN_B10 -to camac_r[18]
 set_location_assignment PIN_AB11 -to camac_r[19]
 set_location_assignment PIN_F21 -to camac_r[20]
-set_location_assignment PIN_K22 -to camac_r[21]
+set_location_assignment PIN_AA11 -to camac_r[21]
 set_location_assignment PIN_B14 -to camac_r[22]
 set_location_assignment PIN_B15 -to camac_r[23]
 set_location_assignment PIN_B16 -to camac_q
