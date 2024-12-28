@@ -174,6 +174,28 @@ wire [7:0] camac_r0;
 wire [7:0] camac_r1;
 wire [7:0] camac_r2;
 
+wire camac_x_ttl;
+wire camac_q_ttl;
+wire camac_z_ttl;
+wire camac_b_ttl;
+wire camac_c_ttl;
+wire camac_s1_ttl;
+wire camac_s2_ttl;
+wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
+wire [CAMAC_FUNC_WIDTH-1:0] camac_f_ttl;
+wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a_ttl;
+
+camac_to_ttl(.i(camac_x), .o(camac_x_ttl));
+camac_to_ttl(.i(camac_q), .o(camac_q_ttl));
+ttl_to_camac#(.N(1))(.i(camac_z_ttl), .o(camac_z));
+ttl_to_camac#(.N(1))(.i(camac_b_ttl), .o(camac_b));
+ttl_to_camac#(.N(1))(.i(camac_c_ttl), .o(camac_c));
+ttl_to_camac#(.N(1))(.i(camac_s1_ttl), .o(camac_s1));
+ttl_to_camac#(.N(1))(.i(camac_s2_ttl), .o(camac_s2));
+ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
+ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH))(.i(camac_a_ttl), .o(camac_a));
+ttl_to_camac#(.N(CAMAC_FUNC_WIDTH))(.i(camac_f_ttl), .o(camac_f));
+
 assign fifo_read = fifo_encoder_read | rx_read;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
@@ -203,10 +225,10 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
                                       .camac_r0(camac_r0), .camac_r1(camac_r1), .camac_r2(camac_r2),
                                       // Линии CAMAC
-                                      .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
-                                      .camac_x(camac_x), .camac_q(camac_q), .camac_b(camac_b),
-                                      .camac_z(camac_z), .camac_c(camac_c), .camac_i(camac_i), 
-                                      .camac_s1(camac_s1), .camac_s2(camac_s2),
+                                      .camac_n(camac_n_ttl), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),
+                                      .camac_x(camac_x_ttl), .camac_q(camac_q_ttl), .camac_b(camac_b_ttl),
+                                      .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), .camac_i(camac_i), 
+                                      .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
                                       .camac_r(camac_r), .camac_w(camac_w), .camac_l(camac_l)
                                       );
 
