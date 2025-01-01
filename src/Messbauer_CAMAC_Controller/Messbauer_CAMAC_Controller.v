@@ -184,9 +184,15 @@ wire camac_s2_ttl;
 wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
 wire [CAMAC_FUNC_WIDTH-1:0] camac_f_ttl;
 wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a_ttl;
+wire [CAMAC_DATA_WIDTH-1:0] camac_w_ttl;
+wire [CAMAC_DATA_WIDTH-1:0] camac_r_ttl;
+wire [CAMAC_AVAILABLE_MODULES-1:0] camac_l_ttl;
 
 camac_to_ttl(.i(camac_x), .o(camac_x_ttl));
 camac_to_ttl(.i(camac_q), .o(camac_q_ttl));
+camac_to_ttl#(.N(CAMAC_DATA_WIDTH))(.i(camac_r), .o(camac_r_ttl));
+camac_to_ttl#(.N(CAMAC_AVAILABLE_MODULES))(.i(camac_l), .o(camac_l_ttl));
+
 ttl_to_camac#(.N(1))(.i(camac_z_ttl), .o(camac_z));
 ttl_to_camac#(.N(1))(.i(camac_b_ttl), .o(camac_b));
 ttl_to_camac#(.N(1))(.i(camac_c_ttl), .o(camac_c));
@@ -195,6 +201,7 @@ ttl_to_camac#(.N(1))(.i(camac_s2_ttl), .o(camac_s2));
 ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
 ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH))(.i(camac_a_ttl), .o(camac_a));
 ttl_to_camac#(.N(CAMAC_FUNC_WIDTH))(.i(camac_f_ttl), .o(camac_f));
+ttl_to_camac#(.N(CAMAC_DATA_WIDTH))(.i(camac_w_ttl), .o(camac_w));
 
 assign fifo_read = fifo_encoder_read | rx_read;
 
@@ -229,7 +236,7 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_x(camac_x_ttl), .camac_q(camac_q_ttl), .camac_b(camac_b_ttl),
                                       .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), .camac_i(camac_i), 
                                       .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
-                                      .camac_r(camac_r), .camac_w(camac_w), .camac_l(camac_l)
+                                      .camac_r(camac_r_ttl), .camac_w(camac_w_ttl), .camac_l(camac_l_ttl)
                                       );
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
