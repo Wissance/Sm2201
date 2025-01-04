@@ -181,6 +181,8 @@ wire camac_b_ttl;
 wire camac_c_ttl;
 wire camac_s1_ttl;
 wire camac_s2_ttl;
+wire camac_i_r_ttl;
+wire camac_i_w_ttl;
 wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
 wire [CAMAC_FUNC_WIDTH-1:0] camac_f_ttl;
 wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a_ttl;
@@ -190,6 +192,7 @@ wire [CAMAC_AVAILABLE_MODULES-1:0] camac_l_ttl;
 
 camac_to_ttl(.i(camac_x), .o(camac_x_ttl));
 camac_to_ttl(.i(camac_q), .o(camac_q_ttl));
+camac_to_ttl(.i(camac_i), .o(camac_i_r_ttl));
 camac_to_ttl#(.N(CAMAC_DATA_WIDTH))(.i(camac_r), .o(camac_r_ttl));
 camac_to_ttl#(.N(CAMAC_AVAILABLE_MODULES))(.i(camac_l), .o(camac_l_ttl));
 
@@ -202,6 +205,8 @@ ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
 ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH))(.i(camac_a_ttl), .o(camac_a));
 ttl_to_camac#(.N(CAMAC_FUNC_WIDTH))(.i(camac_f_ttl), .o(camac_f));
 ttl_to_camac#(.N(CAMAC_DATA_WIDTH))(.i(camac_w_ttl), .o(camac_w));
+
+assign camac_i = ~camac_z_ttl & ~camac_s2_ttl ? camac_i_r_ttl : ~camac_i_w_ttl;
 
 assign fifo_read = fifo_encoder_read | rx_read;
 
@@ -234,9 +239,11 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       // Линии CAMAC
                                       .camac_n(camac_n_ttl), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),
                                       .camac_x(camac_x_ttl), .camac_q(camac_q_ttl), .camac_b(camac_b_ttl),
-                                      .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), .camac_i(camac_i), 
+                                      .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), 
                                       .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
-                                      .camac_r(camac_r_ttl), .camac_w(camac_w_ttl), .camac_l(camac_l_ttl)
+                                      .camac_r(camac_r_ttl), .camac_w(camac_w_ttl), .camac_l(camac_l_ttl),
+                                      // Разделенные inout-линии CAMAC
+                                      .camac_i_r(camac_i_r_ttl), .camac_i_w(camac_i_w_ttl)
                                       );
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
