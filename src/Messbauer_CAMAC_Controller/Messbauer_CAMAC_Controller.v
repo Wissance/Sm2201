@@ -41,9 +41,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
 (
-    parameter CAMAC_AVAILABLE_MODULES = 23,
+    parameter CAMAC_AVAILABLE_MODULES = 24,
     parameter CAMAC_DATA_WIDTH = 24,
-    parameter CAMAC_MODULE_WIDTH = 6,
+    parameter CAMAC_MODULE_WIDTH = 5,
     parameter CAMAC_FUNC_WIDTH = 5,
     parameter CAMAC_SUB_ADDR_WIDTH = 4
 )
