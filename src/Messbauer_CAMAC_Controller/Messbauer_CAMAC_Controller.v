@@ -383,6 +383,8 @@ begin
     end
     else
     begin
+        led_bus[3] <= rx_led;
+        led_bus[4] <= tx_led;
         case (device_state)
         INITIAL_STATE:
         begin
@@ -466,10 +468,10 @@ begin
             begin
                 device_state <= CMD_CHECK_STATE;
                 // display reasons of decode fail
-                led_bus[0] <= !bad_sof;
-                led_bus[1] <= !no_space;
-                led_bus[2] <= !bad_payload;
-                led_bus[3] <= !bad_eof;
+                // led_bus[0] <= !bad_sof;
+                // led_bus[1] <= !no_space;
+                // led_bus[2] <= !bad_payload;
+                // led_bus[3] <= !bad_eof;
                 // led_bus <= ~ current_byte;
                 // led_bus <= ~ bytes_processed;
                 // led_bus <= received_bytes_counter;
@@ -485,7 +487,7 @@ begin
                 device_state <= CMD_DETECTED_STATE;
                 cmd_response_required <= 1'b1;
                 // cmd decoded successfully
-                led_bus[4] <= 0;
+                // led_bus[4] <= 0;
             end
             else
             begin
@@ -493,7 +495,7 @@ begin
                 //cmd_processed_received <= 1'b1; // ??
                 cmd_response_required <= 1'b0;
                 // cmd decode failed
-                led_bus[4] <= 1;
+                // led_bus[4] <= 1;
             end
         end
         CMD_DETECTED_STATE:
@@ -527,6 +529,9 @@ begin
                     cmd_response[6] <= 8'hee;
                     cmd_response_bytes <= 7;
                     device_state <= CMD_EXECUTE_FINISH_STATE;
+                    led_bus[0] <= 0;
+                    led_bus[1] <= 1;
+                    led_bus[2] <= 1;
                 end
                 GET_CAMAC_MODULE_REG_CMD:
                 begin
@@ -540,6 +545,9 @@ begin
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
                     device_state <= CMD_EXECUTE_FINISH_STATE;
+                    led_bus[0] <= 1;
+                    led_bus[1] <= 0;
+                    led_bus[2] <= 1;
                 end
                 GET_MODULES_LAM_CMD:
                 begin
@@ -555,6 +563,9 @@ begin
                     cmd_response_bytes <= 9;
                     //cmd_processed_received <= 1'b1;
                     device_state <= CMD_FINALIZE_DELAY_STATE;
+                    led_bus[0] <= 0;
+                    led_bus[1] <= 1;
+                    led_bus[2] <= 1;
                 end
                 default:
                 begin
@@ -568,6 +579,9 @@ begin
                     cmd_response_bytes <= 7;
                     //cmd_processed_received <= 1'b1;
                     device_state <= CMD_FINALIZE_DELAY_STATE;
+                    led_bus[0] <= 1;
+                    led_bus[1] <= 1;
+                    led_bus[2] <= 0;
                 end
             endcase
             
