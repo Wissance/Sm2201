@@ -223,8 +223,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_w[11]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_w[13]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_w[14]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to camac_w
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rs232_cts
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rs232_rts
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to rs232_cts
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to rs232_rts
 set_location_assignment PIN_AA13 -to camac_w[0]
 set_location_assignment PIN_AA14 -to camac_w[1]
 set_location_assignment PIN_AA15 -to camac_w[2]
@@ -269,8 +269,8 @@ set_location_assignment PIN_B21 -to camac_q
 set_location_assignment PIN_C21 -to camac_x
 set_location_assignment PIN_D21 -to camac_c
 set_location_assignment PIN_E21 -to camac_s2
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rs232_rx
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to rs232_tx
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to rs232_rx
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR OFF -to rs232_tx
 set_global_assignment -name VERILOG_FILE camac_to_ttl.v
 set_global_assignment -name VERILOG_FILE ttl_to_camac.v
 set_global_assignment -name ENABLE_OCT_DONE OFF
