@@ -24,9 +24,9 @@
 
 module camac_controller_exchanger #
 (
-    parameter CAMAC_AVAILABLE_MODULES = 23,
+    parameter CAMAC_AVAILABLE_MODULES = 24,
     parameter CAMAC_DATA_WIDTH = 24,
-    parameter CAMAC_MODULE_WIDTH = 6,
+    parameter CAMAC_MODULE_WIDTH = 5,
     parameter CAMAC_FUNC_WIDTH = 5,
     parameter CAMAC_SUB_ADDR_WIDTH = 4
 )
@@ -61,7 +61,9 @@ module camac_controller_exchanger #
     // Сигналы управления
     output reg  camac_z,                             // сигнал начальная установка (= Пуск), контроллер -> магистраль
     output reg  camac_c,                             // сигнал сброс, контроллер -> магистраль
-    inout  wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
+    input wire  camac_i_r,
+    output reg  camac_i_w,
+    // inout  wire camac_i,                             // сигнал запрет, контроллер -> магистраль/устройство
     output reg  camac_s1,                            // сигнал строб S1, контроллер -> магистраль
     output reg  camac_s2,                            // сигнал строб S2, контроллер -> магистраль
     // output reg  camac_h,                             // сигнал задержка, контроллер -> магистраль/устройство (нестандартный сигнал)
@@ -98,10 +100,10 @@ localparam reg [7:0] CAMAC_AFTER_S2_DELAY = 5;
 
 reg [3:0] camac_state;
 reg [7:0] counter;
-reg  camac_i_w;
-wire camac_i_r;
+//reg  camac_i_w;
+//wire camac_i_r;
 
-assign camac_i = ~camac_z & ~camac_s2 ? camac_i_r : camac_i_w;
+//assign camac_i = ~camac_z & ~camac_s2 ? camac_i_r : camac_i_w;
 
 always @(posedge clk)
 begin

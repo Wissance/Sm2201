@@ -37,13 +37,24 @@
 //                       В ответ придет 3 байта состояния линий L, например, 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 :
 //                         0xFF 0xFF 0x00 0x03 0x01 0x04 0x04 0xEE 0xEE
 //                    4. Любые другие команды отклоняются 0xFF 0xFF 0x00 0x01 0x02 0xEE 0xEE
-//
+// Diagnostic: используется световая индикация led_bus
+//                    1. Светодиоды l0, l1 и l2 используются для индикации типа команды 
+//                       l2l1l0 - 110 - уст. регистра, 
+//                              - 101 - чт. регистра, 
+//                              - 011 - проверка запросов на обслуживание
+//                              - 000 - не подерживаемая команда
+//                       l3 - индикация завершения обработки команды   0 - завершено
+//                       l4 - состояние ошибки (декодирования команды) 0 - ошибка
+//                       l5 - индикация ошибки декодирования 0 - нет ошибки
+// Контроллер взаимодействует с COM-портом через переходник USB-COM, для корректной работы
+// переходник должен быть настроен на следующие параметры обмена:
+// 115200 бод, 8 бит, четн до четн, 1 стоп бит, без управления потоком
 //////////////////////////////////////////////////////////////////////////////////
 module Messbauer_CAMAC_Controller #
 (
-    parameter CAMAC_AVAILABLE_MODULES = 23,
+    parameter CAMAC_AVAILABLE_MODULES = 24,
     parameter CAMAC_DATA_WIDTH = 24,
-    parameter CAMAC_MODULE_WIDTH = 6,
+    parameter CAMAC_MODULE_WIDTH = 5,
     parameter CAMAC_FUNC_WIDTH = 5,
     parameter CAMAC_SUB_ADDR_WIDTH = 4
 )
@@ -148,9 +159,9 @@ reg  [7:0] rx_cmd_bytes_analyzed;
 // 6. Набор регистров командной обработки данных по RS232
 wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
 reg  [7:0] cmd_response [0: 14];
-reg  [3:0] cmd_response_bytes;
-reg  [3:0] cmd_tx_bytes_counter;
-reg  [3:0] cmd_finalize_counter;
+reg  [4:0] cmd_response_bytes;
+reg  [4:0] cmd_tx_bytes_counter;
+reg  [4:0] cmd_finalize_counter;
 reg cmd_next_byte_protect;
 reg cmd_ready;
 reg cmd_response_required;
@@ -174,7 +185,42 @@ wire [7:0] camac_r0;
 wire [7:0] camac_r1;
 wire [7:0] camac_r2;
 
+wire camac_x_ttl;
+wire camac_q_ttl;
+wire camac_z_ttl;
+wire camac_b_ttl;
+wire camac_c_ttl;
+wire camac_s1_ttl;
+wire camac_s2_ttl;
+wire camac_i_r_ttl;
+wire camac_i_w_ttl;
+wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
+wire [CAMAC_FUNC_WIDTH-1:0] camac_f_ttl;
+wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a_ttl;
+wire [CAMAC_DATA_WIDTH-1:0] camac_w_ttl;
+wire [CAMAC_DATA_WIDTH-1:0] camac_r_ttl;
+wire [CAMAC_AVAILABLE_MODULES-1:0] camac_l_ttl;
+
+camac_to_ttl(.i(camac_x), .o(camac_x_ttl));
+camac_to_ttl(.i(camac_q), .o(camac_q_ttl));
+camac_to_ttl(.i(camac_i), .o(camac_i_r_ttl));
+camac_to_ttl#(.N(CAMAC_DATA_WIDTH))(.i(camac_r), .o(camac_r_ttl));
+camac_to_ttl#(.N(CAMAC_AVAILABLE_MODULES))(.i(camac_l), .o(camac_l_ttl));
+
+ttl_to_camac#(.N(1))(.i(camac_z_ttl), .o(camac_z));
+ttl_to_camac#(.N(1))(.i(camac_b_ttl), .o(camac_b));
+ttl_to_camac#(.N(1))(.i(camac_c_ttl), .o(camac_c));
+ttl_to_camac#(.N(1))(.i(camac_s1_ttl), .o(camac_s1));
+ttl_to_camac#(.N(1))(.i(camac_s2_ttl), .o(camac_s2));
+ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
+ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH))(.i(camac_a_ttl), .o(camac_a));
+ttl_to_camac#(.N(CAMAC_FUNC_WIDTH))(.i(camac_f_ttl), .o(camac_f));
+ttl_to_camac#(.N(CAMAC_DATA_WIDTH))(.i(camac_w_ttl), .o(camac_w));
+
+assign camac_i = ~camac_z_ttl & ~camac_s2_ttl ? camac_i_r_ttl : ~camac_i_w_ttl;
+
 assign fifo_read = fifo_encoder_read | rx_read;
+assign cmd_decode_error = bad_sof | no_space | bad_payload | bad_eof;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
@@ -203,11 +249,13 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
                                       .camac_r0(camac_r0), .camac_r1(camac_r1), .camac_r2(camac_r2),
                                       // Линии CAMAC
-                                      .camac_n(camac_n), .camac_f(camac_f), .camac_a(camac_a),
-                                      .camac_x(camac_x), .camac_q(camac_q), .camac_b(camac_b),
-                                      .camac_z(camac_z), .camac_c(camac_c), .camac_i(camac_i), 
-                                      .camac_s1(camac_s1), .camac_s2(camac_s2),
-                                      .camac_r(camac_r), .camac_w(camac_w), .camac_l(camac_l)
+                                      .camac_n(camac_n_ttl), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),
+                                      .camac_x(camac_x_ttl), .camac_q(camac_q_ttl), .camac_b(camac_b_ttl),
+                                      .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), 
+                                      .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
+                                      .camac_r(camac_r_ttl), .camac_w(camac_w_ttl), .camac_l(camac_l_ttl),
+                                      // Разделенные inout-линии CAMAC
+                                      .camac_i_r(camac_i_r_ttl), .camac_i_w(camac_i_w_ttl)
                                       );
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
@@ -342,11 +390,13 @@ begin
         cmd_response_bytes <= 0;
         cmd_tx_bytes_counter <= 0;
         cmd_next_byte_protect <= 0;
-        camac_cmd <=1'b0;
+        camac_cmd <= 1'b0;
         led_bus <= 8'b11111111;
     end
     else
     begin
+        //led_bus[3] <= rx_led;
+        //led_bus[4] <= tx_led;
         case (device_state)
         INITIAL_STATE:
         begin
@@ -429,11 +479,14 @@ begin
             if (cmd_decode_finished == 1'b1)
             begin
                 device_state <= CMD_CHECK_STATE;
+                led_bus[3] <= 1'b1;
+                led_bus[4] <= 1'b1;
+                led_bus[5] <= cmd_decode_error;
                 // display reasons of decode fail
-                led_bus[0] <= !bad_sof;
-                led_bus[1] <= !no_space;
-                led_bus[2] <= !bad_payload;
-                led_bus[3] <= !bad_eof;
+                // led_bus[0] <= !bad_sof;
+                // led_bus[1] <= !no_space;
+                // led_bus[2] <= !bad_payload;
+                // led_bus[3] <= !bad_eof;
                 // led_bus <= ~ current_byte;
                 // led_bus <= ~ bytes_processed;
                 // led_bus <= received_bytes_counter;
@@ -446,18 +499,20 @@ begin
 
             if (cmd_decode_success == 1'b1)
             begin
+                // cmd decoded successfully
                 device_state <= CMD_DETECTED_STATE;
                 cmd_response_required <= 1'b1;
-                // cmd decoded successfully
-                led_bus[4] <= 0;
+                led_bus[4] <= 1'b1;
             end
             else
             begin
-                device_state <= CMD_FINALIZE_STATE;
-                //cmd_processed_received <= 1'b1; // ??
+               // cmd decode failed, go INITIAL, show error on led_bus[4]
+                device_state <= INITIAL_STATE;
                 cmd_response_required <= 1'b0;
-                // cmd decode failed
-                led_bus[4] <= 1;
+                led_bus[4] <= 1'b0;
+                led_bus[0] <= 1'b1;
+                led_bus[1] <= 1'b1;
+                led_bus[2] <= 1'b1;
             end
         end
         CMD_DETECTED_STATE:
@@ -491,6 +546,9 @@ begin
                     cmd_response[6] <= 8'hee;
                     cmd_response_bytes <= 7;
                     device_state <= CMD_EXECUTE_FINISH_STATE;
+                    led_bus[0] <= 0;
+                    led_bus[1] <= 1;
+                    led_bus[2] <= 1;
                 end
                 GET_CAMAC_MODULE_REG_CMD:
                 begin
@@ -504,6 +562,9 @@ begin
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
                     device_state <= CMD_EXECUTE_FINISH_STATE;
+                    led_bus[0] <= 1;
+                    led_bus[1] <= 0;
+                    led_bus[2] <= 1;
                 end
                 GET_MODULES_LAM_CMD:
                 begin
@@ -518,7 +579,11 @@ begin
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;
                     //cmd_processed_received <= 1'b1;
+                    camac_cmd <= 1'b0;
                     device_state <= CMD_FINALIZE_DELAY_STATE;
+                    led_bus[0] <= 1;
+                    led_bus[1] <= 1;
+                    led_bus[2] <= 0;
                 end
                 default:
                 begin
@@ -532,6 +597,10 @@ begin
                     cmd_response_bytes <= 7;
                     //cmd_processed_received <= 1'b1;
                     device_state <= CMD_FINALIZE_DELAY_STATE;
+                    camac_cmd <= 1'b0;
+                    led_bus[0] <= 0;
+                    led_bus[1] <= 0;
+                    led_bus[2] <= 0;
                 end
             endcase
             
@@ -542,7 +611,7 @@ begin
             begin
                 //cmd_processed_received <= 1'b1;
                 camac_cmd <= 1'b0;
-                if (r0 == SET_CAMAC_MODULE_REG_CMD)                     // READ OPERATION
+                if (r0 == GET_CAMAC_MODULE_REG_CMD)                     // READ OPERATION
                 begin
                     cmd_response[4] <= camac_r [7:0];
                     cmd_response[5] <= camac_r [15:8]; 
@@ -559,7 +628,7 @@ begin
         begin
             cmd_processed_received <= 1'b1;
             cmd_finalize_counter <= cmd_finalize_counter + 1;
-            if (cmd_finalize_counter == 4'b1000)
+            if (cmd_finalize_counter == 4'b11111)
             begin
                cmd_finalize_counter <= 0;
                device_state <= CMD_FINALIZE_STATE;
@@ -570,15 +639,15 @@ begin
             // finalize cmd
             if (cmd_response_required == 1'b1)
             begin
-                // after send set to 0
-                //if (cmd_tx_bytes_counter < cmd_response_bytes)
                 tx_transaction <= 1'b1;
-                // todo(UMV): add decoder module ...
+                // todo(UMV): add encoder to prevent from storing encoded cmd
                 if (tx_busy == 1'b0)
                 begin
                     if (cmd_tx_bytes_counter == cmd_response_bytes)
                     begin
                         cmd_response_required <= 1'b0;
+                        // shows that response done
+                        led_bus[3] <= 1'b0;
                     end
                     else
                     begin
@@ -608,7 +677,7 @@ begin
                 tx_data_ready <= 1'b0;
                 cmd_next_byte_protect <= 1'b0;
                 cmd_finalize_counter <= cmd_finalize_counter + 1;
-                if (cmd_finalize_counter == 4'b1111)
+                if (cmd_finalize_counter == 4'b11111)
                 begin
                     device_state <= CLEANUP_STATE;
                     cmd_finalize_counter <= 0;
