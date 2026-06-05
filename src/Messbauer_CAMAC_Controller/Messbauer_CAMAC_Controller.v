@@ -10,13 +10,19 @@
 // Tool versions:  Quartus Prime Lite 18.1
 // Description:    Новый Camac-контроллер с RS-232 интерфейсом управления
 //
-// Dependencies:   1. quick_rs232 (модуль последовательного порта - https://github.com/Wissance/QuickRS232)
-//                 2. fifo (модуль буфера First In First Out - https://github.com/Wissance/QuickRS232)
-//                 3. serial_cmd_decoder (декодер команд, пример - https://github.com/Wissance/QmtechCycloneIVBoardDemos/blob/master/SerialPortWithCmdProcessor/serial_cmd_decoder.v)
-//                 4. camac_controller_exchanger (модуль управления циклом CAMAC)
-// Revision:       1.0
-// Additional Comments: В CAMAC инверсная по отношению к стандарту ТТЛ логика 
-//                      (т.е. лог. 0 CAMAC == лог. 1 ТТЛ)
+// Dependencies:      1. quick_rs232 (модуль последовательного порта - https://github.com/Wissance/QuickRS232)
+//                    2. fifo (модуль буфера First In First Out - https://github.com/Wissance/QuickRS232)
+//                    3. serial_cmd_decoder (декодер команд, пример - https://github.com/Wissance/QmtechCycloneIVBoardDemos/blob/master/SerialPortWithCmdProcessor/serial_cmd_decoder.v)
+//                    4. camac_controller_exchanger (модуль управления циклом CAMAC)
+// Revision:          1.0
+// Additional Comments: 
+//                    1. В CAMAC инверсная по отношению к стандарту ТТЛ логика 
+//                         (т.е. лог. 0 CAMAC == лог. 1 ТТЛ)
+//                    2. N - 5 битная шина для адресации модулей,  в данном проекте из-за нехватки линий
+//                       стенда реализовано на основе дешифратора, camac_n для данной реализации должен отдавать номер 
+//                       модуля в ТТЛ логике
+//                    3. нумерация модулей в коде идет с 0, 0 соотвествует первому модуля (это должно учитываться
+//                       в управляющем программном обеспечении)
 // Command & Control: Для управления будет использован формат команд из демо проекта 
 //                    SerialPortWithCmdProcessor в репо QmtechCycloneIVBoardDemos
 //                    Общий формат команды к контроллеру:
@@ -194,7 +200,7 @@ wire camac_s1_ttl;
 wire camac_s2_ttl;
 wire camac_i_r_ttl;
 wire camac_i_w_ttl;
-wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
+//wire [CAMAC_MODULE_WIDTH-1:0] camac_n_ttl;
 wire [CAMAC_FUNC_WIDTH-1:0] camac_f_ttl;
 wire [CAMAC_SUB_ADDR_WIDTH-1:0] camac_a_ttl;
 wire [CAMAC_DATA_WIDTH-1:0] camac_w_ttl;
@@ -212,7 +218,7 @@ ttl_to_camac#(.N(1))(.i(camac_b_ttl), .o(camac_b));
 ttl_to_camac#(.N(1))(.i(camac_c_ttl), .o(camac_c));
 ttl_to_camac#(.N(1))(.i(camac_s1_ttl), .o(camac_s1));
 ttl_to_camac#(.N(1))(.i(camac_s2_ttl), .o(camac_s2));
-ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
+// ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
 ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH))(.i(camac_a_ttl), .o(camac_a));
 ttl_to_camac#(.N(CAMAC_FUNC_WIDTH))(.i(camac_f_ttl), .o(camac_f));
 ttl_to_camac#(.N(CAMAC_DATA_WIDTH))(.i(camac_w_ttl), .o(camac_w));
@@ -249,7 +255,7 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
                                       .camac_r0(camac_r0), .camac_r1(camac_r1), .camac_r2(camac_r2),
                                       // Линии CAMAC
-                                      .camac_n(camac_n_ttl), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),
+                                      .camac_n(camac_n), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),
                                       .camac_x(camac_x_ttl), .camac_q(camac_q_ttl), .camac_b(camac_b_ttl),
                                       .camac_z(camac_z_ttl), .camac_c(camac_c_ttl), 
                                       .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
