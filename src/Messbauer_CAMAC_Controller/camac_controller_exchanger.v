@@ -299,6 +299,9 @@ begin
             begin
                 if (cmd == 1'b0)
                 begin
+                    // адресуем самого себя (24 линия никак не учитывпается в работе контроллера)
+                    // станции 24 и 25 принадлежат контроллеру крейта
+                    camac_n <= 5'b11000;
                     camac_state <= AWAIT_CMD_STATE;
                     controller_busy <= 1'b0;
                 end
