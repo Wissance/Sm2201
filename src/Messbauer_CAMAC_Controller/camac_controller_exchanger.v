@@ -144,16 +144,16 @@ begin
                 camac_s2 <= 1'b0;
                 camac_b <= 1'b0;
                 camac_z <= 1'b0;
-                // I (inhibit) - запрет, это двунаправленная линия, логика обратная по КАМАК активное значение
+                // I (inhibit) - запрет, это двунаправленная линия, логика обратная (!!!есть подозрения насчет этого!!!) по КАМАК активное значение
                 // 1, т.е. для ТТЛ - лог.0, неактивное 0, ТТЛ - лог.1
-                camac_i_w <= 1'b1;
+                camac_i_w <= 1'b0;
                 camac_c <= 1'b0;
             end
             BEGIN_INIT_STATE:
             begin
                 camac_b <= 1'b1;
                 camac_z <= 1'b1;
-                camac_i_w <= 1'b0;
+                camac_i_w <= 1'b1;
                 counter <= counter + 1;
                 if (counter == CAMAC_Z_TO_S2_STROBE_DELAY)
                 begin
@@ -185,7 +185,7 @@ begin
             begin
                 camac_b <= 1'b0;
                 camac_z <= 1'b0;
-                camac_i_w <= 1'b1;
+                camac_i_w <= 1'b0;
                 camac_state <= AWAIT_CMD_STATE;
             end
             AWAIT_CMD_STATE:
@@ -204,7 +204,7 @@ begin
                 camac_s1 <= 1'b0;
                 camac_s2 <= 1'b0;
                 camac_b <= 1'b0;
-                camac_i_w <= 1'b1;
+                camac_i_w <= 1'b0;
             end
             SET_CAMAC_BUSY_STATE:
             begin
