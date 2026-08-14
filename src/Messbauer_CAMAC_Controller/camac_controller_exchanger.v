@@ -105,6 +105,9 @@ reg [7:0] counter;
 
 //assign camac_i = ~camac_z & ~camac_s2 ? camac_i_r : camac_i_w;
 
+/* В ТТЛ активный уровень лог 1 (2,4 В и выше), неактивный - 0
+ * Для КАМАК активный кровень - лог.0, 
+ */
 always @(posedge clk)
 begin
     if (rst == 1'b1)
@@ -112,16 +115,18 @@ begin
         cmd_received <= 1'b0;
         controller_busy <= 1'b0;
         camac_state <= INITIAL_STATE;
-        camac_b <= 1'b1;
-        camac_s1 <= 1'b1;
-        camac_s2 <= 1'b1;
+        camac_b <= 1'b0;
+        // camac_c - мягкий сброс в отличие от z
+        camac_c <= 1'b0;
+        camac_s1 <= 1'b0;
+        camac_s2 <= 1'b0;
 
         counter <= 8'h00;
         camac_r0 <= 8'h00;
         camac_r1 <= 8'h00;
         camac_r2 <= 8'h00;
-        camac_z <= 1'b1;
-        camac_i_w <= 1'b1;
+        camac_z <= 1'b0;
+        camac_i_w <= 1'b0;
         camac_w <= 0;
     end
     else
@@ -135,16 +140,19 @@ begin
                 camac_r1 <= 8'h00;
                 camac_r2 <= 8'h00;
                 
-                camac_s1 <= 1'b1;
-                camac_s2 <= 1'b1;
-                camac_b <= 1'b1;
-                camac_z <= 1'b1;
+                camac_s1 <= 1'b0;
+                camac_s2 <= 1'b0;
+                camac_b <= 1'b0;
+                camac_z <= 1'b0;
+                // I (inhibit) - запрет, это двунаправленная линия, логика обратная по КАМАК активное значение
+                // 1, т.е. для ТТЛ - лог.0, неактивное 0, ТТЛ - лог.1
                 camac_i_w <= 1'b1;
+                camac_c <= 1'b0;
             end
             BEGIN_INIT_STATE:
             begin
-                camac_b <= 1'b0;
-                camac_z <= 1'b0;
+                camac_b <= 1'b1;
+                camac_z <= 1'b1;
                 camac_i_w <= 1'b0;
                 counter <= counter + 1;
                 if (counter == CAMAC_Z_TO_S2_STROBE_DELAY)
@@ -155,7 +163,7 @@ begin
             end
             INIT_S2_STROBE_BEGIN_STATE:
             begin
-                camac_s2 <= 1'b0;
+                camac_s2 <= 1'b1;
                 counter <= counter + 1;
                 if (counter == CAMAC_S2_INIT_LEN)
                 begin
@@ -165,7 +173,7 @@ begin
             end
             INIT_S2_STROBE_END_STATE:
             begin
-                camac_s2 <= 1'b1;
+                camac_s2 <= 1'b0;
                 counter <= counter + 1;
                 if (counter == CAMAC_AFTER_S2_DELAY)
                 begin
@@ -175,8 +183,8 @@ begin
             end
             END_INIT_STATE:
             begin
-                camac_b <= 1'b1;
-                camac_z <= 1'b1;
+                camac_b <= 1'b0;
+                camac_z <= 1'b0;
                 camac_i_w <= 1'b1;
                 camac_state <= AWAIT_CMD_STATE;
             end
@@ -193,14 +201,15 @@ begin
                 camac_r1 <= 8'h00;
                 camac_r2 <= 8'h00;
 
-                camac_s1 <= 1'b1;
-                camac_s2 <= 1'b1;
-                camac_b <= 1'b1;
+                camac_s1 <= 1'b0;
+                camac_s2 <= 1'b0;
+                camac_b <= 1'b0;
+                camac_i_w <= 1'b1;
             end
             SET_CAMAC_BUSY_STATE:
             begin
                 
-                camac_b <= 1'b0;
+                camac_b <= 1'b1;
                 if (camac_module == 0)
                 begin
                     // безадресаня команда (может быть сброс)
@@ -229,13 +238,13 @@ begin
                 begin
                     counter <= 0;
                     camac_state <= S1_STROBE_BEGIN_STATE;
-                    camac_s1 <= 1'b1;
+                    camac_s1 <= 1'b0;
                 end
             end
             S1_STROBE_BEGIN_STATE:
             begin
                 // запись и чтение осуществялется по строб сигналу S1
-                camac_s1 <= 1'b0;
+                camac_s1 <= 1'b1; //
                 // counter <= counter + 1;
                 //if (camac_x == 1'b1)
                 //begin
@@ -255,7 +264,7 @@ begin
                 if (counter > CAMAC_S1_MIN_LEN)
                 begin 
                     camac_state <= S1_TO_S2_STROBE_DELAY_STATE;
-                    camac_s1 <= 1'b1;
+                    camac_s1 <= 1'b0;
                     counter <= 0;
                 end
             end
@@ -265,13 +274,13 @@ begin
                 if (counter > CAMAC_S1_TO_S2_DELAY)
                 begin 
                     camac_state <= S2_STROBE_BEGIN_STATE;
-                    camac_s2 <= 1'b1;
+                    camac_s2 <= 1'b0;
                     counter <= 0;
                 end
             end
             S2_STROBE_BEGIN_STATE:
             begin
-                camac_s2 <= 1'b0;
+                camac_s2 <= 1'b1;
                 camac_state <= S2_STROBE_END_STATE;
             end
             S2_STROBE_END_STATE:
@@ -279,7 +288,7 @@ begin
                 counter <= counter + 1;
                 if (counter > CAMAC_S2_MIN_LEN)
                 begin 
-                    camac_s2 <= 1'b1;
+                    camac_s2 <= 1'b0;
                     counter <= 0;
                     camac_state <= FREE_CAMAC_BUSY_STATE;
                 end
@@ -292,7 +301,7 @@ begin
                     counter <= 0;
                     camac_state <= FIN_CMD_STATE;
                     cmd_received <= 1'b0;
-                    camac_b <= 1'b1;
+                    camac_b <= 1'b0;
                 end
             end
             FIN_CMD_STATE:
