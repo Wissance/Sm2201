@@ -214,21 +214,21 @@ wire [CAMAC_DATA_WIDTH-1:0] camac_w_ttl;
 wire [CAMAC_DATA_WIDTH-1:0] camac_r_ttl;
 wire [CAMAC_AVAILABLE_MODULES-1:0] camac_l_ttl;
 
-camac_to_ttl(.i(camac_x), .o(camac_x_ttl));
-camac_to_ttl(.i(camac_q), .o(camac_q_ttl));
-camac_to_ttl(.i(camac_i), .o(camac_i_r_ttl));
-camac_to_ttl#(.N(CAMAC_DATA_WIDTH)) conv1(.i(camac_r), .o(camac_r_ttl));
-camac_to_ttl#(.N(CAMAC_AVAILABLE_MODULES)) conv2(.i(camac_l), .o(camac_l_ttl));
+camac_to_ttl conv1(.i(camac_x), .o(camac_x_ttl));
+camac_to_ttl conv2(.i(camac_q), .o(camac_q_ttl));
+camac_to_ttl conv3(.i(camac_i), .o(camac_i_r_ttl));
+camac_to_ttl#(.N(CAMAC_DATA_WIDTH)) conv4(.i(camac_r), .o(camac_r_ttl));
+camac_to_ttl#(.N(CAMAC_AVAILABLE_MODULES)) conv5(.i(camac_l), .o(camac_l_ttl));
 
-ttl_to_camac#(.N(1)) conv3(.i(camac_z_ttl), .o(camac_z));
-ttl_to_camac#(.N(1)) conv4(.i(camac_b_ttl), .o(camac_b));
-ttl_to_camac#(.N(1)) conv5(.i(camac_c_ttl), .o(camac_c));
-ttl_to_camac#(.N(1)) conv6(.i(camac_s1_ttl), .o(camac_s1));
-ttl_to_camac#(.N(1)) conv7(.i(camac_s2_ttl), .o(camac_s2));
+ttl_to_camac#(.N(1)) conv6(.i(camac_z_ttl), .o(camac_z));
+ttl_to_camac#(.N(1)) conv7(.i(camac_b_ttl), .o(camac_b));
+ttl_to_camac#(.N(1)) conv8(.i(camac_c_ttl), .o(camac_c));
+ttl_to_camac#(.N(1)) conv9(.i(camac_s1_ttl), .o(camac_s1));
+ttl_to_camac#(.N(1)) conv10(.i(camac_s2_ttl), .o(camac_s2));
 // ttl_to_camac#(.N(CAMAC_MODULE_WIDTH))(.i(camac_n_ttl), .o(camac_n));
-ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH)) conv8(.i(camac_a_ttl), .o(camac_a));
-ttl_to_camac#(.N(CAMAC_FUNC_WIDTH)) conv9(.i(camac_f_ttl), .o(camac_f));
-ttl_to_camac#(.N(CAMAC_DATA_WIDTH)) conv10(.i(camac_w_ttl), .o(camac_w));
+ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH)) conv11(.i(camac_a_ttl), .o(camac_a));
+ttl_to_camac#(.N(CAMAC_FUNC_WIDTH)) conv12(.i(camac_f_ttl), .o(camac_f));
+ttl_to_camac#(.N(CAMAC_DATA_WIDTH)) conv13(.i(camac_w_ttl), .o(camac_w));
 
 assign camac_i = ~camac_z_ttl & ~camac_s2_ttl ? camac_i_r_ttl : ~camac_i_w_ttl;
 
