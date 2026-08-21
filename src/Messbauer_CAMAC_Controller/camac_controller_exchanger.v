@@ -106,7 +106,7 @@ reg [7:0] counter;
 //assign camac_i = ~camac_z & ~camac_s2 ? camac_i_r : camac_i_w;
 
 /* В ТТЛ активный уровень лог 1 (2,4 В и выше), неактивный - 0
- * Для КАМАК активный кровень - лог.0, 
+ * Для КАМАК активный кровень - лог.0
  */
 always @(posedge clk)
 begin

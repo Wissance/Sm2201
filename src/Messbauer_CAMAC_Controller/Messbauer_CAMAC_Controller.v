@@ -175,6 +175,7 @@ reg  [7:0] cmd_response [0: 14];
 reg  [4:0] cmd_response_bytes;
 reg  [4:0] cmd_tx_bytes_counter;
 reg  [4:0] cmd_finalize_counter;
+reg  [15:0] led_cleanup_pause;
 reg cmd_next_byte_protect;
 reg cmd_ready;
 reg cmd_response_required;
@@ -230,7 +231,7 @@ ttl_to_camac#(.N(CAMAC_SUB_ADDR_WIDTH)) conv11(.i(camac_a_ttl), .o(camac_a));
 ttl_to_camac#(.N(CAMAC_FUNC_WIDTH)) conv12(.i(camac_f_ttl), .o(camac_f));
 ttl_to_camac#(.N(CAMAC_DATA_WIDTH)) conv13(.i(camac_w_ttl), .o(camac_w));
 
-assign camac_i = ~camac_z_ttl & ~camac_s2_ttl ? camac_i_r_ttl : ~camac_i_w_ttl;
+assign camac_i = camac_z_ttl & camac_s2_ttl ? camac_i_r_ttl : ~camac_i_w_ttl;
 
 assign fifo_read = fifo_encoder_read | rx_read;
 assign cmd_decode_error = bad_sof | no_space | bad_payload | bad_eof;
@@ -268,7 +269,8 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .camac_s1(camac_s1_ttl), .camac_s2(camac_s2_ttl),
                                       .camac_r(camac_r_ttl), .camac_w(camac_w_ttl), .camac_l(camac_l_ttl),
                                       // Разделенные inout-линии CAMAC
-                                      .camac_i_r(camac_i_r_ttl), .camac_i_w(camac_i_w_ttl)
+                                      .camac_i_r(camac_i_r_ttl), 
+                                      .camac_i_w(camac_i_w_ttl)
                                       );
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
@@ -372,6 +374,21 @@ begin
         end
     end
 end
+/******************* Блок триггер байт на отправку в RS232 ***********************/
+always @(posedge tx_data_copied or negedge tx_transaction)
+begin
+    if (tx_transaction == 1'b0)
+    begin
+        cmd_tx_bytes_counter <= 0;
+    end
+    else
+    begin
+        if (tx_data_copied == 1'b1)
+        begin
+            cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
+        end
+    end
+end
 /************** Блок описания поведения работы CAMAC-контроллера *****************/
 // main cycle -> accumulate rx bytes -> process -> handle cmd -> send response
 // main issue here how to control that number of received bytes grew
@@ -401,8 +418,9 @@ begin
         for (c = 0; c < 15; c = c + 1)
             cmd_response[c] <= 8'h00;
         cmd_response_bytes <= 0;
-        cmd_tx_bytes_counter <= 0;
+        // cmd_tx_bytes_counter <= 0;
         cmd_next_byte_protect <= 0;
+        led_cleanup_pause <= 0;
         camac_cmd <= 1'b0;
         led_bus <= 8'b11111111;
     end
@@ -442,7 +460,7 @@ begin
                 cmd_response_required <= 1'b0;
                 cmd_processed_received <= 1'b0;
                 cmd_response_bytes <= 0;
-                cmd_tx_bytes_counter <= 0;
+                //cmd_tx_bytes_counter <= 0;
                 cmd_finalize_counter <= 0;
                 camac_cmd <=1'b0;
             end
@@ -538,7 +556,6 @@ begin
         CMD_EXECUTE_START_STATE:
         begin
             // execute cmd: get or set register
-            cmd_tx_bytes_counter <= 0;
             cmd_next_byte_protect <= 0;
             cmd_finalize_counter <= 0;
             case (r0)
@@ -659,33 +676,25 @@ begin
                     if (cmd_tx_bytes_counter == cmd_response_bytes)
                     begin
                         cmd_response_required <= 1'b0;
+                        tx_transaction <= 1'b0;
                         // shows that response done
                         led_bus[3] <= 1'b0;
                     end
                     else
                     begin
+                        //if (tx_data_copied == 1'b1)
+                        //begin
                         tx_data <= cmd_response[cmd_tx_bytes_counter];
                         tx_data_ready <= 1'b1;
                         cmd_next_byte_protect <= 1'b0;
+                        //end
                     end
                 end
-                else
-                begin
-                    if (tx_data_copied == 1'b0)
-                    begin
-                        if (cmd_next_byte_protect == 1'b0)
-                        begin
-                            cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
-                            cmd_next_byte_protect <= 1'b1;
-                        end
-                    end
-                    
-                end
-                // unless we don't have a buffered tx send byte after byte ...
             end
             else
             begin
                 // clean up response ...
+                led_cleanup_pause <= 0;
                 tx_transaction <= 1'b0;
                 tx_data_ready <= 1'b0;
                 cmd_next_byte_protect <= 1'b0;
@@ -702,7 +711,16 @@ begin
         begin
             cmd_ready <= 1'b0;
             cmd_receive_timeout <= 0;
-            device_state <= INITIAL_STATE;
+            if (led_cleanup_pause == 16'hfff0)
+            begin
+                led_bus <= 8'b11111111;
+                device_state <= INITIAL_STATE;
+                led_cleanup_pause <= 8'b0;
+            end
+            else
+            begin
+                led_cleanup_pause <= led_cleanup_pause + 1;
+            end
         end
         default:
         begin

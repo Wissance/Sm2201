@@ -124,7 +124,7 @@ begin
         TICKS_PER_UART_BIT <= CLK_TICKS_PER_RS232_BIT;
         HALF_TICKS_PER_UART_BIT <= CLK_HALF_TICKS_PER_RS232_BIT;
         j <= 0;
-        TOTAL_RX_TIMEOUT <= 6400; // ~ 9600 bit/s MUST BE HALF OF BIT
+        TOTAL_RX_TIMEOUT <= 6400; // 6400 ~ 9600 bit/s MUST BE HALF OF BIT
         rx_timeout <= 0;
         rx_parity_counter <= 4'b0000;
     end
@@ -217,6 +217,7 @@ begin
                     if (rx_bit_counter == TICKS_PER_UART_BIT)
                     begin
                         rx_bit_counter <= 0;
+                        rx_timeout <= 0;
                         rx_data_bit_counter <= rx_data_bit_counter + 4'b0001;
                     end
                 end
@@ -224,6 +225,7 @@ begin
             PARITY_BIT_EXCHANGE_STATE:
             begin
                 rx_bit_counter <= rx_bit_counter + 1;
+                rx_timeout <= 0;
                 if (rx_bit_counter == TICKS_PER_UART_BIT - PARITY_ANALYZE_OFFSET)
                 begin
                     // check parity, if parity is bad generate error, don't store byte
@@ -313,6 +315,7 @@ begin
                 if (rx == 1'b1)
                 begin
                     rx_state <= SYNCH_STOP_EXCHANGE_STATE;
+                    rx_timeout <= 0;
                 end
             end
             SYNCH_STOP_EXCHANGE_STATE:
@@ -405,7 +408,6 @@ begin
                 begin
                     tx_state <= START_BIT_EXCHANGE_STATE;
                     tx_buffer <= tx_data;
-                    tx_data_copied <= 1'b1;
                     tx_busy <= 1'b1;
                     tx_data_bit_counter <=4'b0000;      // Data bit counter = 0
                 end
@@ -416,6 +418,7 @@ begin
             end
             START_BIT_EXCHANGE_STATE:
             begin
+                tx_data_copied <= 1'b1;
                 tx <= 1'b0;
                 tx_bit_counter <= tx_bit_counter + 1;
                 if (tx_bit_counter >= TICKS_PER_UART_BIT)
@@ -430,7 +433,6 @@ begin
                 if (tx_data_bit_counter == DEFAULT_BYTE_LEN)
                 begin
                     tx_state <= PARITY_BIT_EXCHANGE_STATE;
-                    tx_data_copied <= 1'b0;
                 end
                 else
                 begin
@@ -453,6 +455,7 @@ begin
             end
             PARITY_BIT_EXCHANGE_STATE:
             begin
+                tx_data_copied <= 1'b0;
                 if (tx_bit_counter == 0)
                 begin
                     case (DEFAULT_PARITY)
