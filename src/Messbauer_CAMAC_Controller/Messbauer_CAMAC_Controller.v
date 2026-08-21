@@ -161,6 +161,7 @@ reg  [31:0] tx_blink_counter;
 reg  rx_blink;
 reg  [1:0]  rx_blink_state;
 reg  [31:0] rx_blink_counter;
+reg  [31:0] led_cleanup_pause;
 // 5. Дополнительный набор регистров-состояний обмена и полученных данных
 reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
@@ -175,7 +176,6 @@ reg  [7:0] cmd_response [0: 14];
 reg  [4:0] cmd_response_bytes;
 reg  [4:0] cmd_tx_bytes_counter;
 reg  [4:0] cmd_finalize_counter;
-reg  [15:0] led_cleanup_pause;
 reg cmd_next_byte_protect;
 reg cmd_ready;
 reg cmd_response_required;
@@ -279,7 +279,7 @@ assign has_rx_data = received_bytes_counter[0]|received_bytes_counter[1]|receive
                      received_bytes_counter[3]|received_bytes_counter[4]|received_bytes_counter[5]|
                      received_bytes_counter[6]|received_bytes_counter[7];
 /*********************************************************************************/
-// this always implements the global reset that board generates at start
+// Глобальный резет для блоков
 always @(posedge clk)
 begin
     if (rst_generated != 1'b1)
@@ -301,7 +301,7 @@ begin
     end
 end
 
-// this always implements LED lighting on Rx (Receive) -  D5 diode
+// RS232 Rx D5 светодиод на плате
 always @(posedge clk)
 begin
     if (rst)
@@ -346,7 +346,7 @@ begin
     end
 end
 
-// received and non send bytes counter
+// Управление счетчиком байт, полученных через последовательный интерфейс
 always @(posedge rst or negedge rx_byte_received or posedge fifo_read)
 begin
     if (rst == 1'b1)
@@ -432,7 +432,7 @@ begin
         INITIAL_STATE:
         begin
             // impl regs clear before new command
-            if (cmd_bytes_counter > 0)
+            if (received_bytes_counter > 0)
             begin
                 // 1. Clear cmd_receive_timeout not received_bytes_counter
                 cmd_receive_timeout <= cmd_receive_timeout + 1;
@@ -443,7 +443,6 @@ begin
                 if (cmd_receive_timeout == 32)
                 begin
                     rx_read <= 1'b0;
-                    cmd_bytes_counter <= cmd_bytes_counter - 1;
                     cmd_receive_timeout <= 0;
                 end
             end
@@ -711,11 +710,12 @@ begin
         begin
             cmd_ready <= 1'b0;
             cmd_receive_timeout <= 0;
-            if (led_cleanup_pause == 16'hfff0)
+            if (led_cleanup_pause == 32'h00ffffff)
             begin
                 led_bus <= 8'b11111111;
                 device_state <= INITIAL_STATE;
                 led_cleanup_pause <= 8'b0;
+                cmd_bytes_counter <= 0;
             end
             else
             begin
