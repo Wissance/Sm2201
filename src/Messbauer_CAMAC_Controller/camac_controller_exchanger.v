@@ -8,7 +8,7 @@
 // Project Name:   camac_controller_exchanger
 // Target Devices: Cyclone IV (EP4CE15F23C8N)
 // Tool versions:  Quartus Prime Lite 18.1
-// Description:    Camac-контроллера, непосредственно управляющий CAMAC-модулями
+// Description:    Camac модуль обмена даннымиы, непосредственно управляющий CAMAC-модулями
 //
 // Dependencies: 
 //
@@ -21,6 +21,9 @@
 `define WRITE_OPERATION          1
 `define READ_OPERATION           2
 `define CHECK_LAM_OPERATION      3
+
+// вывод отладочной информации по CAMAC, следует закомментировать в production/release режиме
+`define DEBUG_CAMAC_DATA
 
 module camac_controller_exchanger #
 (
@@ -308,9 +311,11 @@ begin
             begin
                 if (cmd == 1'b0)
                 begin
+                    `ifndef DEBUG_CAMAC_DATA
                     // адресуем самого себя (24 линия никак не учитывпается в работе контроллера)
                     // станции 24 и 25 принадлежат контроллеру крейта
                     camac_n <= 5'b11000;
+                    `endif
                     camac_state <= AWAIT_CMD_STATE;
                     controller_busy <= 1'b0;
                 end
