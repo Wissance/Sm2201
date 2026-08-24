@@ -459,6 +459,7 @@ begin
                 cmd_response_required <= 1'b0;
                 cmd_processed_received <= 1'b0;
                 cmd_response_bytes <= 0;
+                cmd_bytes_counter <= 0;
                 //cmd_tx_bytes_counter <= 0;
                 cmd_finalize_counter <= 0;
                 camac_cmd <=1'b0;
@@ -642,12 +643,12 @@ begin
                 camac_cmd <= 1'b0;
                 if (r0 == GET_CAMAC_MODULE_REG_CMD)                     // READ OPERATION
                 begin
-                    cmd_response[4] <= camac_r [7:0];
-                    cmd_response[5] <= camac_r [15:8]; 
-                    cmd_response[6] <= camac_r [23:16];
-                    memory[1] [7:0] <= camac_r [7:0];
-                    memory[1] [15:8] <= camac_r [15:8];
-                    memory[1] [23:16] <= camac_r [23:16];
+                    cmd_response[4] <= camac_r0;
+                    cmd_response[5] <= camac_r1; 
+                    cmd_response[6] <= camac_r2;
+                    memory[1] [7:0] <= camac_r0;
+                    memory[1] [15:8] <= camac_r1;
+                    memory[1] [23:16] <= camac_r2;
                     memory[1] [31:24] <= 8'h00;
                 end
                 device_state <= CMD_FINALIZE_DELAY_STATE;
