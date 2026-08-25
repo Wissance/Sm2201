@@ -134,9 +134,13 @@ localparam reg [7:0]  GET_MODULES_LAM_CMD = 3;
 /*********************************************************************************/
 /******************************* Блок переменных *********************************/
 // 1. Набор регистров сброса
-reg  rst = 1'b0;
-reg  rst_generated = 1'b0;
+reg  rst;
+reg  rst_generated;
 reg  [7:0] rst_counter;
+reg  [7:0] io_mem_rst_counter;
+// сброс для RS232 и FIFO
+reg  err_rst;
+reg  io_mem_rst;
 // 2. Набор регистров и проводников для чтения из RS232 (Rx)
 reg  rx_read;
 wire rx_err;
@@ -163,7 +167,7 @@ reg  [1:0]  rx_blink_state;
 reg  [31:0] rx_blink_counter;
 reg  [31:0] led_cleanup_pause;
 // 5. Дополнительный набор регистров-состояний обмена и полученных данных
-reg  rx_data_ready_trig;
+// reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
 reg  [3:0] device_state;
 reg  [15:0] cmd_receive_timeout;
@@ -238,13 +242,13 @@ assign cmd_decode_error = bad_sof | no_space | bad_payload | bad_eof;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
-serial_dev (.clk(clk), .rst(rst), .rx(rs232_rx), .tx(rs232_tx), .rts(rs232_rts), .cts(rs232_cts),
+serial_dev (.clk(clk), .rst(io_mem_rst), .rx(rs232_rx), .tx(rs232_tx), .rts(rs232_rts), .cts(rs232_cts),
             .rx_read(fifo_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
 serial_cmd_decoder #(.MAX_CMD_PAYLOAD_BYTES(8)) 
-decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
+decoder (.clk(clk), .rst(io_mem_rst), .cmd_ready(cmd_ready), .data(rx_data),
          .cmd_processed_received(cmd_processed_received), 
          .cmd_read_clk(fifo_encoder_read), .cmd_processed(cmd_decode_finished),
          .cmd_decode_success(cmd_decode_success),
@@ -301,6 +305,38 @@ begin
     end
 end
 
+always @(posedge clk)
+begin
+    if (rst_generated != 1'b1)
+    begin
+        if (io_mem_rst != 1'b1)
+        begin
+            io_mem_rst <= 1'b1;
+            io_mem_rst_counter <= 0;
+        end
+        else
+        begin
+            io_mem_rst_counter <= io_mem_rst_counter + 1;
+            if (io_mem_rst_counter == RST_DELAY_CYCLES)
+            begin
+                io_mem_rst <= 1'b0;
+                // rst_generated <= 1'b1;
+            end
+        end
+    end
+    else
+    begin
+        if (err_rst == 1'b1)
+        begin
+            io_mem_rst <= 1'b1;
+        end
+        else
+        begin
+            io_mem_rst <= 1'b0;
+        end
+    end
+end
+
 // RS232 Rx D5 светодиод на плате
 always @(posedge clk)
 begin
@@ -347,18 +383,18 @@ begin
 end
 
 // Управление счетчиком байт, полученных через последовательный интерфейс
-always @(posedge rst or negedge rx_byte_received or posedge fifo_read)
+always @(posedge io_mem_rst or negedge rx_byte_received or posedge fifo_read)
 begin
-    if (rst == 1'b1)
+    if (io_mem_rst == 1'b1)
     begin
-        rx_data_ready_trig <= 1'b0;
+        //rx_data_ready_trig <= 1'b0;
         received_bytes_counter <= 0;
     end
     else
     begin
         if (fifo_read == 1'b1)
         begin
-            rx_data_ready_trig <= 1'b0;
+            // rx_data_ready_trig <= 1'b0;
             if (received_bytes_counter > 0)
             begin
                 received_bytes_counter <= received_bytes_counter - 1;
@@ -368,7 +404,7 @@ begin
         begin
             if (rx_byte_received == 1'b0) 
             begin
-                rx_data_ready_trig <= 1'b1;
+                // rx_data_ready_trig <= 1'b1;
                 received_bytes_counter <= received_bytes_counter + 1;
             end
         end
@@ -423,6 +459,7 @@ begin
         led_cleanup_pause <= 0;
         camac_cmd <= 1'b0;
         led_bus <= 8'b11111111;
+        err_rst <= 1'b0;
     end
     else
     begin
@@ -431,6 +468,7 @@ begin
         case (device_state)
         INITIAL_STATE:
         begin
+            err_rst <= 1'b0;
             // impl regs clear before new command
             if (received_bytes_counter > 0)
             begin
@@ -462,7 +500,7 @@ begin
                 cmd_bytes_counter <= 0;
                 //cmd_tx_bytes_counter <= 0;
                 cmd_finalize_counter <= 0;
-                camac_cmd <=1'b0;
+                camac_cmd <= 1'b0;
             end
         end
         AWAIT_CMD_STATE:
@@ -537,8 +575,10 @@ begin
             end
             else
             begin
-               // cmd decode failed, go INITIAL, show error on led_bus[4]
-                device_state <= INITIAL_STATE;
+                // cmd decode failed, go INITIAL, show error on led_bus[4]
+                // todo(UMV) : we should response anyway
+                device_state <= CMD_FINALIZE_STATE; //INITIAL_STATE;
+                err_rst <= 1'b1;
                 cmd_response_required <= 1'b0;
                 led_bus[4] <= 1'b0;
                 led_bus[0] <= 1'b1;
@@ -602,9 +642,9 @@ begin
                     cmd_response[1] <= 8'hff;
                     cmd_response[2] <= 8'h00;
                     cmd_response[3] <= 8'h03;
-                    cmd_response[4] <= camac_l[7:0];
-                    cmd_response[5] <= camac_l[15:8];
-                    cmd_response[6] <= camac_l[CAMAC_AVAILABLE_MODULES - 1:16];
+                    cmd_response[4] <= camac_l_ttl[7:0];
+                    cmd_response[5] <= camac_l_ttl[15:8];
+                    cmd_response[6] <= camac_l_ttl[CAMAC_AVAILABLE_MODULES - 1:16];
                     cmd_response[7] <= 8'hee;
                     cmd_response[8] <= 8'hee;
                     cmd_response_bytes <= 9;

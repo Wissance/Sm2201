@@ -74,6 +74,7 @@ localparam reg [7:0] EOF_BYTE = 8'hee;
 localparam reg [7:0] SPACE_BYTE = 0;
 localparam reg [1:0] NUMBER_OF_SOF_BYTES = 2;
 localparam reg [1:0] NUMBER_OF_EOF_BYTES = 2;
+localparam reg [15:0] DEFAULT_CMD_CLEAR_AWAIT_TIMEOUT = 5000;
 
 reg [3:0] state;
 reg [7:0] byte_read_delay_counter;
@@ -81,6 +82,7 @@ reg [1:0] sof_bytes_counter;
 reg [1:0] eof_bytes_counter;
 reg [7:0] payload_len;
 reg [7:0] payload_counter;
+reg [15:0] clear_timeout;
 
 reg [7:0] mem [MAX_CMD_PAYLOAD_BYTES-1:0];
 reg [3:0] i;
@@ -116,6 +118,7 @@ begin
         payload_mismatch <= 1'b0;
         bad_eof <= 1'b0;
         current_byte <= 8'h00;
+        //clear_timeout <= 16'h0000;
     end
     else
     begin
@@ -132,6 +135,7 @@ begin
                 eof_bytes_counter <= 0;
                 payload_len <= 0;
                 payload_counter <= 0;
+                //clear_timeout <= 16'h0000;
             end
             AWAIT_CMD_STATE:
             begin
@@ -255,6 +259,7 @@ begin
             CMD_PAYLOAD_PROCESSING_STATE:
             begin
                 payload_mismatch <= 1'b0;  // can't be catch yet (maybe in future)
+                //clear_timeout <= 16'h0000;
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
@@ -277,6 +282,15 @@ begin
             end
             CMD_STOP_PROCESSING_STATE:
             begin
+                /*clear_timeout <= clear_timeout + 1;
+                if (clear_timeout >= DEFAULT_CMD_CLEAR_AWAIT_TIMEOUT)
+                begin
+                    // cmd decoding fails by timeout
+                    state <= AWAIT_CMD_CLEAR_STATE;
+                    cmd_processed <= 1'b1;
+                    cmd_decode_success <= 1'b0;
+                    bad_eof <= 1'b1;
+                end*/
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
@@ -324,12 +338,14 @@ begin
             end
             AWAIT_CMD_CLEAR_STATE:
             begin
-                if (cmd_ready == 1'b0)
+                // todo(UMV) add manual reset
+                if (cmd_ready == 1'b0) // || clear_timeout >= DEFAULT_CMD_CLEAR_AWAIT_TIMEOUT)
                 begin
                     cmd_processed <= 1'b0;
                     state <= AWAIT_CMD_STATE;
                     byte_read_delay_counter <= 0;
                     cmd_read_clk <= 1'b0;
+                    clear_timeout <= 16'h0000;
                 end
             end
             default:
