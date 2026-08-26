@@ -470,7 +470,7 @@ begin
         begin
             err_rst <= 1'b0;
             // impl regs clear before new command
-            if (received_bytes_counter > 0)
+            /*if (received_bytes_counter > 0)
             begin
                 // 1. Clear cmd_receive_timeout not received_bytes_counter
                 cmd_receive_timeout <= cmd_receive_timeout + 1;
@@ -483,9 +483,9 @@ begin
                     rx_read <= 1'b0;
                     cmd_receive_timeout <= 0;
                 end
-            end
-            else
-            begin
+            end*/
+            //else
+            //begin
                 device_state <= AWAIT_CMD_STATE;
                 cmd_receive_timeout <= 0;
                 cmd_bytes_counter <= 0;
@@ -501,7 +501,7 @@ begin
                 //cmd_tx_bytes_counter <= 0;
                 cmd_finalize_counter <= 0;
                 camac_cmd <= 1'b0;
-            end
+            //end
         end
         AWAIT_CMD_STATE:
         begin
@@ -577,7 +577,7 @@ begin
             begin
                 // cmd decode failed, go INITIAL, show error on led_bus[4]
                 // todo(UMV) : we should response anyway
-                device_state <= CMD_FINALIZE_STATE; //INITIAL_STATE;
+                device_state <= CMD_FINALIZE_STATE;
                 err_rst <= 1'b1;
                 cmd_response_required <= 1'b0;
                 led_bus[4] <= 1'b0;
@@ -755,8 +755,9 @@ begin
             begin
                 led_bus <= 8'b11111111;
                 device_state <= INITIAL_STATE;
-                led_cleanup_pause <= 8'b0;
+                led_cleanup_pause <= 32'h00000000;
                 cmd_bytes_counter <= 0;
+                cmd_receive_timeout <= 0;
             end
             else
             begin

@@ -251,12 +251,7 @@ begin
                 // counter <= counter + 1;
                 //if (camac_x == 1'b1)
                 //begin
-                    if (camac_operation == `READ_OPERATION)
-                    begin
-                        camac_r0 <= camac_r[7:0];
-                        camac_r1 <= camac_r[15:8];
-                        camac_r2 <= camac_r[23:16];
-                    end
+                    
                     camac_state <= S1_STROBE_END_STATE;
                 //end
                 // todo umv: 
@@ -294,6 +289,12 @@ begin
                     camac_s2 <= 1'b0;
                     counter <= 0;
                     camac_state <= FREE_CAMAC_BUSY_STATE;
+                    if (camac_operation == `READ_OPERATION)
+                    begin
+                        camac_r0 <= camac_r[7:0];
+                        camac_r1 <= camac_r[15:8];
+                        camac_r2 <= camac_r[23:16];
+                    end
                 end
             end
             FREE_CAMAC_BUSY_STATE:
