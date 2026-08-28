@@ -264,7 +264,7 @@ camac_controller_exchanger controller(.clk(clk), .rst(rst),
                                       .controller_busy(camac_exchanger_busy),
                                       .camac_module(r1), .camac_module_function(r3), 
                                       .camac_module_subaddr(r2), .camac_operation(r0), 
-                                      .camac_w0(r5), .camac_w1(r6), .camac_w2(r7),
+                                      .camac_w0(r4), .camac_w1(r5), .camac_w2(r6),
                                       .camac_r0(camac_r0), .camac_r1(camac_r1), .camac_r2(camac_r2),
                                       // Линии CAMAC
                                       .camac_n(camac_n), .camac_f(camac_f_ttl), .camac_a(camac_a_ttl),

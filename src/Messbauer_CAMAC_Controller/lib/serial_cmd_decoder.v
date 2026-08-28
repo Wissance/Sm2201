@@ -87,13 +87,13 @@ reg [15:0] clear_timeout;
 reg [7:0] mem [MAX_CMD_PAYLOAD_BYTES-1:0];
 reg [3:0] i;
 
-assign cmd_payload_r0 = mem[0];
-assign cmd_payload_r1 = mem[1];
-assign cmd_payload_r2 = mem[2];
-assign cmd_payload_r3 = mem[3];
-assign cmd_payload_r4 = mem[4];
-assign cmd_payload_r5 = mem[5];
-assign cmd_payload_r6 = mem[6];
+assign cmd_payload_r0 = mem[0];  // код операции
+assign cmd_payload_r1 = mem[1];  // N номер станции
+assign cmd_payload_r2 = mem[2];  // A субадрес
+assign cmd_payload_r3 = mem[3];  // F код функции
+assign cmd_payload_r4 = mem[4];  // W0 
+assign cmd_payload_r5 = mem[5];  // W1
+assign cmd_payload_r6 = mem[6];  // W2
 assign cmd_payload_r7 = mem[7];
 
 always @(posedge clk)
